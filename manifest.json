@@ -1,0 +1,19 @@
+{
+  "name": "Color Water Sort Puzzle",
+  "short_name": "Water Sort",
+  "description": "Fun and addictive color water sorting brain teaser puzzle game.",
+  "start_url": "/water-sort-game/",
+  "scope": "/water-sort-game/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#090d16",
+  "theme_color": "#1e1b4b",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3105/3105807.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
