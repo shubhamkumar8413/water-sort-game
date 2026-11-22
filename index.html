@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Color Water Sort - Level Puzzle Demo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tone.js साउंड इफ़ेक्ट्स के लिए -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at top, #0f172a, #1e1b4b, #090d16);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        /* कांच की बोतल (Test Tube) का डिज़ाइन */
+        .bottle {
+            width: 54px;
+            height: 170px;
+            border: 3px solid rgba(255, 255, 255, 0.45);
+            border-top: none;
+            border-radius: 0 0 28px 28px;
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: inset 0 -10px 20px rgba(255, 255, 255, 0.1), 0 10px 20px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column-reverse;
+            padding: 4px;
+            gap: 2px;
+            cursor: pointer;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s;
+            position: relative;
+        }
+
+        @media (min-width: 640px) {
+            .bottle {
+                width: 62px;
+                height: 195px;
+            }
+        }
+
+        /* बोतल का ऊपरी किनारा (Rim) */
+        .bottle::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -5px;
+            right: -5px;
+            height: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* चुनी हुई बोतल ऊपर उठेगी */
+        .bottle.selected {
+            transform: translateY(-22px) scale(1.05);
+            border-color: #fbbf24;
+            box-shadow: 0 18px 30px rgba(251, 191, 36, 0.35);
+        }
+
+        /* पूरी भरी हुई और सही बोतल का चमकना */
+        .bottle.completed {
+            border-color: #34d399;
+            box-shadow: 0 0 20px rgba(52, 211, 153, 0.4);
+        }
+
+        /* पानी की लेयर (Color Layer) */
+        .water-layer {
+            width: 100%;
+            height: 23.5%;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.35);
+        }
+        .water-layer:first-child {
+            border-radius: 6px 6px 22px 22px;
+        }
+
+        /* 3D बटन इफ़ेक्ट */
+        .btn-3d {
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+        }
+        .btn-3d:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            70% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .animate-bounce-in {
+            animation: bounceIn 0.4s ease-out forwards;
+        }
+
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: floatSlow 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center text-white p-3 sm:p-5 overflow-x-hidden relative">
+
+    <!-- ==================== 1. HOME SCREEN (MAIN MENU) ==================== -->
+    <div id="home-screen" class="fixed inset-0 bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 z-40 flex flex-col justify-between items-center p-6 text-center">
+        <!-- टॉप बार: कॉइन्स और साउंड -->
+        <div class="w-full max-w-lg flex justify-between items-center">
+            <button type="button" onclick="openWalletModal()" class="btn-3d bg-slate-900/90 hover:bg-slate-800 border border-amber-400/50 px-3.5 py-1.5 rounded-2xl flex items-center gap-2 shadow cursor-pointer">
+                <span>🪙</span>
+                <span id="home-coins" class="font-bold text-amber-400 text-sm">100</span>
+                <span class="bg-amber-400/20 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded-md">Wallet</span>
+            </button>
+            <button type="button" onclick="toggleSound()" class="home-sound-btn btn-3d bg-indigo-900/80 border border-indigo-500/40 p-2.5 rounded-2xl text-base">
+                🔊
+            </button>
+        </div>
+
+        <!-- सेंटर लोगो और PLAY बटन -->
+        <div class="flex flex-col items-center my-auto max-w-sm w-full">
+            <div class="animate-float text-6xl sm:text-7xl mb-4 drop-shadow-[0_10px_20px_rgba(251,191,36,0.3)]">
+                🧪✨
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-amber-300 to-rose-400 mb-2">
+                WATER SORT
+            </h1>
+            <p class="text-xs sm:text-sm text-indigo-200/80 mb-8">
+                दिमागी रंग पज़ल • Brain Teaser Puzzle
+            </p>
+
+            <!-- मुख्य PLAY बटन -->
+            <button type="button" onclick="enterGame()" class="btn-3d w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 text-slate-950 font-extrabold py-4 px-8 rounded-2xl text-lg sm:text-xl shadow-xl flex items-center justify-center gap-3 mb-4 cursor-pointer">
+                <span>▶️</span>
+                <span id="home-play-text">PLAY LEVEL 1</span>
+            </button>
+
+            <!-- नियम / कैसे खेलें बटन -->
+            <button type="button" onclick="toggleModal('how-to-play-modal', true)" class="btn-3d w-full bg-indigo-900/70 hover:bg-indigo-800 border border-indigo-500/30 text-indigo-100 font-semibold py-3 px-6 rounded-2xl text-sm cursor-pointer">
+                📖 कैसे खेलें (How to Play)
+            </button>
+        </div>
+
+        <!-- फुटर: Play Store के लिए अनिवार्य Privacy Policy लिंक -->
+        <div class="w-full max-w-lg flex flex-col items-center gap-2 text-xs text-slate-400">
+            <div class="flex gap-4">
+                <button type="button" onclick="toggleModal('privacy-modal', true)" class="underline hover:text-amber-300 transition cursor-pointer">
+                    Privacy Policy
+                </button>
+                <span>•</span>
+                <span>Version 1.0.0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 2. GAMEPLAY HEADER ==================== -->
+    <header class="w-full max-w-lg flex flex-col gap-3">
+        <div class="flex justify-between items-center bg-slate-900/80 border border-indigo-500/30 px-3 sm:px-4 py-2.5 rounded-2xl shadow-lg">
+            <!-- होम बटन और लेवल बैज -->
+            <div class="flex items-center gap-2.5">
+                <button type="button" onclick="goHome()" title="Home Menu" class="btn-3d w-10 h-10 rounded-xl bg-indigo-800 hover:bg-indigo-700 border border-indigo-400/30 flex items-center justify-center text-lg shadow">
+                    🏠
+                </button>
+                <div>
+                    <div class="text-[10px] text-indigo-300 font-semibold uppercase tracking-wider">वर्तमान चरण</div>
+                    <div id="level-display" class="text-lg sm:text-xl font-extrabold text-white">LEVEL 1</div>
+                </div>
+            </div>
+
+            <!-- कॉइन्स और साउंड -->
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="openWalletModal()" class="btn-3d bg-slate-800 hover:bg-slate-700 border border-amber-400/50 px-3 py-1.5 rounded-xl flex items-center gap-1.5 cursor-pointer">
+                    <span>🪙</span>
+                    <span id="coins-display" class="font-bold text-amber-400 text-sm">100</span>
+                    <span class="text-[10px] text-amber-300 font-bold">↗</span>
+                </button>
+                <button type="button" id="sound-btn" onclick="toggleSound()" class="home-sound-btn btn-3d bg-indigo-900 border border-indigo-500/40 p-2 rounded-xl text-sm">
+                    🔊
+                </button>
+            </div>
+        </div>
+
+        <!-- पावर-अप्स और हेल्प बटन (AdMob Rewarded Ads के साथ) -->
+        <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="restartLevel()" class="btn-3d bg-slate-800 hover:bg-slate-700 border border-slate-600 py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1">
+                <span>🔄</span> रीस्टार्ट
+            </button>
+
+            <button type="button" onclick="undoMove()" class="btn-3d bg-indigo-700 hover:bg-indigo-600 py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1">
+                <span>↩️</span> Undo (<span id="undo-count">2</span>)
+            </button>
+
+            <!-- Rewarded Ad से एक्स्ट्रा खाली बोतल जोड़ना -->
+            <button type="button" id="add-bottle-btn" onclick="triggerAd('extra_bottle')" class="btn-3d bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 text-slate-950">
+                <span>🧪 +1 बोतल</span>
+                <span class="bg-black/25 text-white text-[9px] px-1.5 py-0.5 rounded-full">AD</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- मुख्य गेम एरिया (बोतलें यहाँ दिखेंगी) -->
+    <main class="w-full max-w-lg my-auto py-6 flex flex-col items-center justify-center">
+        <p class="text-xs text-indigo-200/80 mb-6 text-center bg-white/5 px-4 py-1.5 rounded-full">
+            एक ही रंग के पानी को एक बोतल में इकट्ठा करके लेवल पूरा करें!
+        </p>
+
+        <!-- बोतलों का ग्रिड -->
+        <div id="bottles-container" class="flex flex-wrap justify-center items-end gap-4 sm:gap-6 px-2 min-h-[220px]">
+            <!-- JavaScript से बोतलें यहाँ बनेंगी -->
+        </div>
+    </main>
+
+    <!-- लेवल पूरा होने का पॉपअप (Level Complete Modal) -->
+    <div id="level-complete-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-30 flex items-center justify-center p-4">
+        <div class="animate-bounce-in w-full max-w-sm bg-gradient-to-b from-indigo-900 to-slate-900 border-2 border-amber-400/50 rounded-3xl p-6 text-center shadow-2xl">
+            <div class="text-6xl mb-2">🎉</div>
+            <h2 id="complete-title" class="text-2xl font-extrabold text-amber-400 mb-1">LEVEL 1 पूरा हुआ!</h2>
+            <p class="text-xs text-indigo-200 mb-4">शानदार दिमाग! आपने सभी रंग सही से अलग कर दिए।</p>
+            
+            <div class="bg-black/30 rounded-2xl p-3 mb-5 flex justify-around items-center border border-white/10">
+                <div>
+                    <div class="text-[10px] text-slate-400">इनाम</div>
+                    <div class="text-lg font-bold text-amber-400">+50 🪙</div>
+                </div>
+                <div class="h-8 w-[1px] bg-white/10"></div>
+                <div>
+                    <div class="text-[10px] text-slate-400">अगला चरण</div>
+                    <div id="next-level-label" class="text-lg font-bold text-emerald-400">LEVEL 2</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2.5">
+                <!-- सामान्य अगला लेवल (जिसमें Interstitial Ad दिखेगा) -->
+                <button type="button" onclick="proceedToNextLevel(false)" class="btn-3d w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-3.5 px-4 rounded-xl text-sm shadow-lg">
+                    अगला लेवल खेलें ➡️
+                </button>
+                <!-- डबल इनाम के लिए Rewarded Ad -->
+                <button type="button" onclick="proceedToNextLevel(true)" class="btn-3d w-full bg-amber-500/20 border border-amber-400/50 text-amber-300 font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5">
+                    <span>🎬</span> विज्ञापन देखें और 2X कॉइन्स (+100 🪙) पाएं
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AdMob Full-Screen Interstitial / Rewarded Ad सिमुलेशन -->
+    <div id="ad-modal" class="hidden fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-6 text-center">
+        <div class="w-full max-w-sm bg-slate-900 border border-amber-500/40 rounded-2xl p-6 flex flex-col items-center">
+            <span id="ad-badge" class="bg-amber-400 text-black text-[11px] font-extrabold px-3 py-1 rounded-full mb-4">
+                AdMob Interstitial Ad (फुल-स्क्रीन ऐड)
+            </span>
+            <div class="w-14 h-14 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <h3 id="ad-heading" class="text-lg font-bold text-white mb-2">अगला लेवल लोड हो रहा है...</h3>
+            <p id="ad-desc" class="text-xs text-slate-300 mb-4">
+                हर लेवल पूरा होने के बाद प्ले स्टोर ऐप्स में यहाँ फुल-स्क्रीन विज्ञापन चलता है, जिससे आपकी कमाई होती है।
+            </p>
+            <div id="ad-countdown" class="text-2xl font-extrabold text-amber-400">3</div>
+        </div>
+    </div>
+
+    <!-- नीचे का AdMob Banner Ad -->
+    <footer class="w-full max-w-lg mt-2">
+        <div class="w-full h-14 bg-slate-900/95 border border-dashed border-indigo-400/40 rounded-xl flex items-center justify-between px-4">
+            <div class="flex items-center gap-2.5">
+                <span class="bg-amber-400 text-slate-950 text-[10px] font-extrabold px-1.5 py-0.5 rounded">Ad</span>
+                <div>
+                    <p class="text-xs font-semibold text-white">Google AdMob Banner (320x50)</p>
+                    <p class="text-[10px] text-slate-400">गेम खेलते समय लगातार चलने वाला बैनर ऐड</p>
+                </div>
+            </div>
+            <span class="text-xs bg-emerald-600 px-3 py-1 rounded-lg font-semibold">Open</span>
+        </div>
+    </footer>
+
+    <!-- टोस्ट नोटिफिकेशन -->
+    <div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 bg-indigo-600 border border-indigo-400 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xl opacity-0 transition-opacity duration-300 pointer-events-none z-50">
+        संदेश
+    </div>
+
+    <!-- कैसे खेलें मोडल (How to Play) -->
+    <div id="how-to-play-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-indigo-500/40 rounded-3xl p-6 max-w-sm w-full text-left shadow-2xl">
+            <h3 class="text-xl font-extrabold text-amber-400 mb-3">📖 खेलने के नियम</h3>
+            <ul class="text-xs sm:text-sm text-slate-200 space-y-2.5 mb-5 list-disc pl-4">
+                <li>किसी भी बोतल पर टैप करके उसे चुनें, फिर दूसरी बोतल पर टैप करके उसमें रंग डालें।</li>
+                <li>आप केवल <b>एक ही रंग</b> के ऊपर या <b>खाली बोतल</b> में ही पानी डाल सकते हैं।</li>
+                <li>जब सभी बोतलों में एक ही रंग भर जाए, तो आपका लेवल पूरा हो जाएगा!</li>
+                <li>फंसने पर <b>Undo</b> या <b>+1 बोतल</b> का उपयोग करें।</li>
+            </ul>
+            <button type="button" onclick="toggleModal('how-to-play-modal', false)" class="btn-3d w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-sm">
+                समझ गया!
+            </button>
+        </div>
+    </div>
+
+    <!-- प्राइवेसी पॉलिसी मोडल (Google Play Store के लिए ज़रूरी) -->
+    <div id="privacy-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-indigo-500/40 rounded-3xl p-6 max-w-sm w-full text-left shadow-2xl">
+            <h3 class="text-lg font-extrabold text-emerald-400 mb-2">🔒 Privacy Policy</h3>
+            <div class="text-xs text-slate-300 space-y-2 max-h-60 overflow-y-auto pr-1 mb-4">
+                <p>यह गेम केवल मनोरंजन के उद्देश्य से बनाया गया है।</p>
+                <p><b>विज्ञापन (Advertisements):</b> इस ऐप में Google AdMob विज्ञापनों का उपयोग किया जाता है, जो विज्ञापन दिखाने के लिए डिवाइस की सामान्य जानकारी (Advertising ID) का उपयोग कर सकते हैं।</p>
+                <p><b>डेटा स्टोरेज:</b> आपका गेम लेवल और कॉइन्स केवल आपके फ़ोन में ही सुरक्षित रहते हैं। हम आपका कोई भी व्यक्तिगत डेटा अपने सर्वर पर नहीं रखते।</p>
+            </div>
+            <button type="button" onclick="toggleModal('privacy-modal', false)" class="btn-3d w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm">
+                बंद करें (Close)
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== COIN WALLET & UPI WITHDRAWAL PAGE ==================== -->
+    <div id="wallet-modal" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4 overflow-y-auto">
+        <div class="animate-bounce-in w-full max-w-md bg-gradient-to-b from-slate-900 to-indigo-950 border border-amber-400/40 rounded-3xl p-5 sm:p-6 shadow-2xl my-auto">
+            <!-- हेडर -->
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">💳</span>
+                    <h3 class="text-xl font-extrabold text-white">Coin Wallet</h3>
+                </div>
+                <button type="button" onclick="toggleModal('wallet-modal', false)" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center font-bold">
+                    ✕
+                </button>
+            </div>
+
+            <!-- बैलेंस कार्ड -->
+            <div class="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border border-amber-400/40 rounded-2xl p-4 mb-5 text-center">
+                <div class="text-xs text-amber-200/80 uppercase tracking-wider font-semibold mb-1">कुल उपलब्ध कॉइन्स</div>
+                <div class="text-3xl font-extrabold text-amber-400 flex items-center justify-center gap-2">
+                    <span>🪙</span>
+                    <span id="wallet-balance">100</span>
+                </div>
+                <div class="mt-2 inline-block bg-black/40 text-amber-300 text-[11px] font-semibold px-3 py-1 rounded-full">
+                    मिनिमम विड्रॉल: 5,000 कॉइन्स
+                </div>
+            </div>
+
+            <!-- UPI और कॉइन्स फॉर्म -->
+            <div class="space-y-3.5 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-indigo-200 mb-1">आपकी UPI ID डालें</label>
+                    <input type="text" id="upi-input" placeholder="उदाहरण: name@paytm या 9876543210@ybl" class="w-full bg-slate-950/90 border border-indigo-500/40 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-indigo-200 mb-1">कितने कॉइन्स विड्रॉल करने हैं? (Min: 5,000)</label>
+                    <input type="number" id="withdraw-coins-input" min="5000" step="100" placeholder="5000" class="w-full bg-slate-950/90 border border-indigo-500/40 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+                </div>
+
+                <button type="button" onclick="submitWithdrawal()" class="btn-3d w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold py-3 rounded-xl text-sm shadow-lg mt-2 cursor-pointer">
+                    Withdraw Request भेजें 🚀
+                </button>
+            </div>
+
+            <!-- पिछली रिक्वेस्ट हिस्ट्री -->
+            <div class="mt-5 pt-4 border-t border-white/10 text-left">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">हाल की विड्रॉल रिक्वेस्ट</h4>
+                <div id="withdrawal-history" class="space-y-2 max-h-28 overflow-y-auto text-xs">
+                    <p class="text-slate-500 text-center py-2">अभी तक कोई विड्रॉल रिक्वेस्ट नहीं है।</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GOOGLE ADMOB CONFIGURATION ====================
+        // जब आप Android ऐप बनाएंगे, तो यहाँ अपनी असली AdMob IDs डालेंगे:
+        const ADMOB_CONFIG = {
+            TEST_MODE: true,
+            APP_ID: 'ca-app-pub-3940256099942544~3347511713',
+            BANNER_ID: 'ca-app-pub-3940256099942544/6300978111',
+            INTERSTITIAL_ID: 'ca-app-pub-3940256099942544/1033173712',
+            REWARDED_ID: 'ca-app-pub-3940256099942544/5224354917'
+        };
+
+        // आकर्षक रंगों का पैलेट
+        const COLORS = {
+            red: 'linear-gradient(135deg, #f87171, #dc2626)',
+            blue: 'linear-gradient(135deg, #60a5fa, #2563eb)',
+            green: 'linear-gradient(135deg, #4ade80, #16a34a)',
+            yellow: 'linear-gradient(135deg, #facc15, #ca8a04)',
+            purple: 'linear-gradient(135deg, #c084fc, #7e22ce)',
+            pink: 'linear-gradient(135deg, #f472b6, #db2777)',
+            cyan: 'linear-gradient(135deg, #22d3ee, #0891b2)'
+        };
+
+        // गेम स्टेट वेरिएबल्स
+        let currentLevel = parseInt(localStorage.getItem('watersort_level')) || 1;
+        let coins = parseInt(localStorage.getItem('watersort_coins')) || 100;
+        let bottles = [];
+        let initialBottles = [];
+        let history = [];
+        let selectedBottleIndex = null;
+        let undoRemaining = 2;
+        let extraBottleAdded = false;
+        let soundEnabled = true;
+
+        // साउंड इफ़ेक्ट्स (Tone.js)
+        let synth = null;
+        function playTone(type) {
+            if (!soundEnabled) return;
+            try {
+                if (!synth && typeof Tone !== 'undefined') {
+                    synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                    synth.volume.value = -10;
+                }
+                if (!synth) return;
+                if (type === 'select') synth.triggerAttackRelease("E4", "32n");
+                else if (type === 'pour') synth.triggerAttackRelease(["C4", "E4", "G4"], "16n");
+                else if (type === 'error') synth.triggerAttackRelease("A2", "16n");
+                else if (type === 'win') synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "8n");
+            } catch (e) {}
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.querySelectorAll('.home-sound-btn').forEach(btn => {
+                btn.innerText = soundEnabled ? '🔊' : '🔇';
+            });
+            showToast(soundEnabled ? 'साउंड चालू' : 'साउंड बंद');
+        }
+
+        // Home Screen और Modals को कंट्रोल करने के फ़ंक्शन
+        function updateHomeScreenUI() {
+            const homeCoins = document.getElementById('home-coins');
+            const homePlayText = document.getElementById('home-play-text');
+            if (homeCoins) homeCoins.innerText = coins;
+            if (homePlayText) homePlayText.innerText = `PLAY LEVEL ${currentLevel}`;
+        }
+
+        function enterGame() {
+            playTone('select');
+            document.getElementById('home-screen').classList.add('hidden');
+            startLevel(currentLevel);
+        }
+
+        function goHome() {
+            playTone('select');
+            updateHomeScreenUI();
+            document.getElementById('home-screen').classList.remove('hidden');
+        }
+
+        function toggleModal(modalId, show) {
+            const el = document.getElementById(modalId);
+            if (!el) return;
+            if (show) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+
+        // ==================== WALLET & UPI WITHDRAWAL LOGIC ====================
+        const MIN_WITHDRAW_COINS = 5000;
+        let withdrawalHistory = JSON.parse(localStorage.getItem('watersort_withdrawals')) || [];
+
+        function openWalletModal() {
+            playTone('select');
+            document.getElementById('wallet-balance').innerText = coins.toLocaleString();
+            document.getElementById('withdraw-coins-input').value = coins >= MIN_WITHDRAW_COINS ? coins : 5000;
+            renderWithdrawalHistory();
+            toggleModal('wallet-modal', true);
+        }
+
+        function submitWithdrawal() {
+            const upiId = document.getElementById('upi-input').value.trim();
+            const amount = parseInt(document.getElementById('withdraw-coins-input').value, 10);
+
+            if (!upiId || !upiId.includes('@')) {
+                playTone('error');
+                showToast('कृपया सही UPI ID डालें (जैसे: name@upi)');
+                return;
+            }
+
+            if (isNaN(amount) || amount < MIN_WITHDRAW_COINS) {
+                playTone('error');
+                showToast('मिनिमम विड्रॉल 5,000 कॉइन्स है!');
+                return;
+            }
+
+            if (amount > coins) {
+                playTone('error');
+                showToast(`आपके पास पर्याप्त कॉइन्स नहीं हैं! (उपलब्ध: ${coins})`);
+                return;
+            }
+
+            // कॉइन्स काटें और रिक्वेस्ट सेव करें
+            coins -= amount;
+            localStorage.setItem('watersort_coins', coins);
+            document.getElementById('coins-display').innerText = coins;
+            document.getElementById('wallet-balance').innerText = coins.toLocaleString();
+            updateHomeScreenUI();
+
+            const record = {
+                upi: upiId,
+                coins: amount,
+                date: new Date().toLocaleDateString('hi-IN'),
+                status: 'Pending'
+            };
+            withdrawalHistory.unshift(record);
+            localStorage.setItem('watersort_withdrawals', JSON.stringify(withdrawalHistory));
+
+            playTone('win');
+            showToast('✅ विड्रॉल रिक्वेस्ट सफलतापूर्वक सबमिट हो गई!');
+            renderWithdrawalHistory();
+        }
+
+        function renderWithdrawalHistory() {
+            const listEl = document.getElementById('withdrawal-history');
+            if (!listEl) return;
+            if (withdrawalHistory.length === 0) {
+                listEl.innerHTML = '<p class="text-slate-500 text-center py-2">अभी तक कोई विड्रॉल रिक्वेस्ट नहीं है।</p>';
+                return;
+            }
+            listEl.innerHTML = withdrawalHistory.map(item => `
+                <div class="bg-black/40 border border-white/10 rounded-xl px-3 py-2 flex justify-between items-center">
+                    <div>
+                        <div class="font-semibold text-white">${item.upi}</div>
+                        <div class="text-[10px] text-slate-400">${item.date} • 🪙 ${item.coins.toLocaleString()}</div>
+                    </div>
+                    <span class="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        ${item.status}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => toast.classList.add('opacity-0'), 2000);
+        }
+
+        // लेवल के हिसाब से पज़ल जनरेट करना (हर लेवल पर कठिनाई बढ़ेगी)
+        function generateLevelData(level) {
+            const colorKeys = Object.keys(COLORS);
+            let numColors = 2; // Level 1 में 2 रंग (आसान शुरुआत)
+            if (level === 2) numColors = 3;
+            else if (level >= 3 && level <= 5) numColors = 4;
+            else if (level >= 6 && level <= 9) numColors = 5;
+            else if (level >= 10) numColors = 6;
+
+            const chosenColors = colorKeys.slice(0, numColors);
+            let pool = [];
+            chosenColors.forEach(c => {
+                for (let i = 0; i < 4; i++) pool.push(c);
+            });
+
+            // पानी के रंगों को आपस में मिलाना (Shuffle)
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+
+            // भरी हुई बोतलें बनाना
+            let generated = [];
+            for (let b = 0; b < numColors; b++) {
+                generated.push(pool.slice(b * 4, (b + 1) * 4));
+            }
+
+            // 2 खाली बोतलें जोड़ना ताकि पानी बदला जा सके
+            generated.push([]);
+            if (numColors >= 3) generated.push([]);
+
+            return generated;
+        }
+
+        // नया लेवल शुरू करना
+        function startLevel(level) {
+            currentLevel = level;
+            localStorage.setItem('watersort_level', currentLevel);
+            document.getElementById('level-display').innerText = `LEVEL ${currentLevel}`;
+            document.getElementById('coins-display').innerText = coins;
+            updateHomeScreenUI();
+
+            bottles = generateLevelData(level);
+            initialBottles = JSON.parse(JSON.stringify(bottles));
+            history = [];
+            selectedBottleIndex = null;
+            undoRemaining = 2;
+            extraBottleAdded = false;
+            document.getElementById('undo-count').innerText = undoRemaining;
+            document.getElementById('add-bottle-btn').disabled = false;
+            document.getElementById('add-bottle-btn').classList.remove('opacity-50');
+            document.getElementById('level-complete-modal').classList.add('hidden');
+
+            renderBottles();
+        }
+
+        // स्क्रीन पर बोतलें दिखाना
+        function renderBottles() {
+            const container = document.getElementById('bottles-container');
+            container.innerHTML = '';
+
+            bottles.forEach((bottleColors, index) => {
+                const bottleEl = document.createElement('div');
+                const isSelected = selectedBottleIndex === index;
+                const isCompleted = bottleColors.length === 4 && bottleColors.every(c => c === bottleColors[0]);
+
+                bottleEl.className = `bottle ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''}`;
+                bottleEl.onclick = () => handleBottleClick(index);
+
+                bottleColors.forEach(colorKey => {
+                    const layer = document.createElement('div');
+                    layer.className = 'water-layer';
+                    layer.style.background = COLORS[colorKey];
+                    bottleEl.appendChild(layer);
+                });
+
+                container.appendChild(bottleEl);
+            });
+        }
+
+        // बोतल पर क्लिक करने का लॉजिक
+        function handleBottleClick(index) {
+            if (selectedBottleIndex === null) {
+                if (bottles[index].length === 0) {
+                    showToast('यह बोतल खाली है!');
+                    return;
+                }
+                selectedBottleIndex = index;
+                playTone('select');
+                renderBottles();
+                return;
+            }
+
+            if (selectedBottleIndex === index) {
+                selectedBottleIndex = null;
+                playTone('select');
+                renderBottles();
+                return;
+            }
+
+            pourWater(selectedBottleIndex, index);
+        }
+
+        // एक बोतल से दूसरी बोतल में पानी डालना
+        function pourWater(fromIdx, toIdx) {
+            const fromBottle = bottles[fromIdx];
+            const toBottle = bottles[toIdx];
+
+            if (toBottle.length >= 4) {
+                playTone('error');
+                showToast('यह बोतल पहले से भरी हुई है!');
+                selectedBottleIndex = null;
+                renderBottles();
+                return;
+            }
+
+            const movingColor = fromBottle[fromBottle.length - 1];
+            const targetTopColor = toBottle.length > 0 ? toBottle[toBottle.length - 1] : null;
+
+            if (targetTopColor === null || targetTopColor === movingColor) {
+                history.push(JSON.parse(JSON.stringify(bottles)));
+
+                while (
+                    fromBottle.length > 0 &&
+                    fromBottle[fromBottle.length - 1] === movingColor &&
+                    toBottle.length < 4
+                ) {
+                    toBottle.push(fromBottle.pop());
+                }
+
+                playTone('pour');
+                selectedBottleIndex = null;
+                renderBottles();
+                checkLevelWin();
+            } else {
+                playTone('error');
+                showToast('केवल एक ही रंग के ऊपर पानी डाल सकते हैं!');
+                selectedBottleIndex = null;
+                renderBottles();
+            }
+        }
+
+        // चेक करना कि लेवल पूरा हुआ या नहीं
+        function checkLevelWin() {
+            const won = bottles.every(b => b.length === 0 || (b.length === 4 && b.every(c => c === b[0])));
+            if (won) {
+                playTone('win');
+                // जीतते ही अगला लेवल तुरंत सेव करें ताकि ऐप बंद करने पर भी प्रगति सुरक्षित रहे
+                const unlockedNextLevel = currentLevel + 1;
+                localStorage.setItem('watersort_level', unlockedNextLevel);
+                
+                setTimeout(() => {
+                    document.getElementById('complete-title').innerText = `LEVEL ${currentLevel} पूरा हुआ!`;
+                    document.getElementById('next-level-label').innerText = `LEVEL ${unlockedNextLevel}`;
+                    document.getElementById('level-complete-modal').classList.remove('hidden');
+                }, 400);
+            }
+        }
+
+        function restartLevel() {
+            bottles = JSON.parse(JSON.stringify(initialBottles));
+            history = [];
+            selectedBottleIndex = null;
+            playTone('select');
+            renderBottles();
+            showToast('लेवल रीस्टार्ट किया गया');
+        }
+
+        function undoMove() {
+            if (history.length === 0) {
+                showToast('वापस लेने के लिए कोई चाल नहीं है');
+                return;
+            }
+            if (undoRemaining <= 0) {
+                showToast('इस लेवल के Undo खत्म हो गए!');
+                return;
+            }
+            bottles = history.pop();
+            undoRemaining--;
+            document.getElementById('undo-count').innerText = undoRemaining;
+            selectedBottleIndex = null;
+            playTone('select');
+            renderBottles();
+        }
+
+        function triggerAd(type) {
+            if (type === 'extra_bottle' && extraBottleAdded) {
+                showToast('इस लेवल में एक्स्ट्रा बोतल पहले ही जुड़ चुकी है!');
+                return;
+            }
+
+            const adModal = document.getElementById('ad-modal');
+            const badge = document.getElementById('ad-badge');
+            const heading = document.getElementById('ad-heading');
+            const countdownEl = document.getElementById('ad-countdown');
+
+            if (type === 'extra_bottle') {
+                badge.innerText = 'AdMob Rewarded Video Ad';
+                heading.innerText = 'विज्ञापन के बाद +1 खाली बोतल मिलेगी...';
+            } else if (type === 'double_coins') {
+                badge.innerText = 'AdMob Rewarded Video Ad';
+                heading.innerText = 'विज्ञापन के बाद 2X कॉइन्स मिलेंगे...';
+            } else {
+                badge.innerText = 'AdMob Interstitial Ad (लेवल के बीच का ऐड)';
+                heading.innerText = 'अगला लेवल लोड हो रहा है...';
+            }
+
+            adModal.classList.remove('hidden');
+            let sec = 3;
+            countdownEl.innerText = sec;
+
+            const timer = setInterval(() => {
+                sec--;
+                if (sec > 0) {
+                    countdownEl.innerText = sec;
+                } else {
+                    clearInterval(timer);
+                    adModal.classList.add('hidden');
+                    onAdFinished(type);
+                }
+            }, 1000);
+        }
+
+        function onAdFinished(type) {
+            if (type === 'extra_bottle') {
+                bottles.push([]);
+                extraBottleAdded = true;
+                document.getElementById('add-bottle-btn').disabled = true;
+                document.getElementById('add-bottle-btn').classList.add('opacity-50');
+                renderBottles();
+                showToast('🧪 1 खाली बोतल जोड़ दी गई!');
+            } else if (type === 'double_coins') {
+                coins += 100;
+                localStorage.setItem('watersort_coins', coins);
+                startLevel(currentLevel + 1);
+                showToast('🎉 +100 बोनस कॉइन्स मिले!');
+            } else if (type === 'next_level') {
+                coins += 50;
+                localStorage.setItem('watersort_coins', coins);
+                startLevel(currentLevel + 1);
+            }
+        }
+
+        function proceedToNextLevel(watchRewarded) {
+            document.getElementById('level-complete-modal').classList.add('hidden');
+            if (watchRewarded) {
+                triggerAd('double_coins');
+            } else {
+                triggerAd('next_level');
+            }
+        }
+
+        // विंडो लोड होने पर गेम तैयार करें
+        window.onload = () => {
+            updateHomeScreenUI();
+            startLevel(currentLevel);
+        };
+    </script>
+</body>
+      </html>
