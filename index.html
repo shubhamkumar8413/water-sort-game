@@ -3,40 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Color Water Sort - Level Puzzle Demo</title>
+    <title>Water Sort - Color Puzzle Game</title>
     <link rel="manifest" href="manifest.json">
-<<link rel="icon" type="image/png" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Tone.js साउंड इफ़ेक्ट्स के लिए -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at top, #0f172a, #13162b, #090c18);
+            --bottle-border: rgba(125, 211, 252, 0.75);
+            --bottle-glow: rgba(56, 189, 248, 0.25);
+            --bottle-radius: 10px 10px 26px 26px;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
-            background: radial-gradient(circle at top, #0f172a, #1e1b4b, #090d16);
+            background: var(--bg-gradient);
             user-select: none;
             -webkit-user-select: none;
             touch-action: manipulation;
+            transition: background 0.4s ease;
         }
 
         /* कांच की बोतल (Test Tube) का डिज़ाइन */
         .bottle {
             width: 54px;
             height: 170px;
-            border: 3px solid rgba(255, 255, 255, 0.45);
+            border: 3px solid var(--bottle-border);
             border-top: none;
-            border-radius: 0 0 28px 28px;
+            border-radius: var(--bottle-radius);
             background: rgba(255, 255, 255, 0.06);
-            box-shadow: inset 0 -10px 20px rgba(255, 255, 255, 0.1), 0 10px 20px rgba(0, 0, 0, 0.4);
+            box-shadow: inset 0 -10px 20px rgba(255, 255, 255, 0.08), 0 10px 20px rgba(0, 0, 0, 0.45), 0 0 14px var(--bottle-glow);
             display: flex;
             flex-direction: column-reverse;
             padding: 4px;
             gap: 2px;
             cursor: pointer;
-            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s, box-shadow 0.2s;
             position: relative;
         }
 
@@ -55,7 +63,7 @@
             left: -5px;
             right: -5px;
             height: 6px;
-            border: 2px solid rgba(255, 255, 255, 0.5);
+            border: 2px solid var(--bottle-border);
             border-radius: 6px;
             background: rgba(255, 255, 255, 0.15);
         }
@@ -63,14 +71,23 @@
         /* चुनी हुई बोतल ऊपर उठेगी */
         .bottle.selected {
             transform: translateY(-22px) scale(1.05);
-            border-color: #fbbf24;
-            box-shadow: 0 18px 30px rgba(251, 191, 36, 0.35);
+            border-color: #fbbf24 !important;
+            box-shadow: 0 18px 30px rgba(251, 191, 36, 0.4);
         }
 
         /* पूरी भरी हुई और सही बोतल का चमकना */
         .bottle.completed {
-            border-color: #34d399;
-            box-shadow: 0 0 20px rgba(52, 211, 153, 0.4);
+            border-color: #34d399 !important;
+            box-shadow: 0 0 22px rgba(52, 211, 153, 0.45);
+        }
+
+        /* हिंट वाली बोतल का हाइलाइट */
+        .bottle.hint-glow {
+            animation: pulseHint 0.8s infinite alternate;
+        }
+        @keyframes pulseHint {
+            from { box-shadow: 0 0 10px #38bdf8; border-color: #38bdf8; }
+            to { box-shadow: 0 0 25px #fbbf24; border-color: #fbbf24; }
         }
 
         /* पानी की लेयर (Color Layer) */
@@ -82,7 +99,7 @@
             box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.35);
         }
         .water-layer:first-child {
-            border-radius: 6px 6px 22px 22px;
+            border-radius: 6px 6px 20px 20px;
         }
 
         /* 3D बटन इफ़ेक्ट */
@@ -96,17 +113,17 @@
         }
 
         @keyframes bounceIn {
-            0% { transform: scale(0.7); opacity: 0; }
-            70% { transform: scale(1.05); opacity: 1; }
+            0% { transform: scale(0.75); opacity: 0; }
+            70% { transform: scale(1.04); opacity: 1; }
             100% { transform: scale(1); }
         }
         .animate-bounce-in {
-            animation: bounceIn 0.4s ease-out forwards;
+            animation: bounceIn 0.35s ease-out forwards;
         }
 
         @keyframes floatSlow {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
+            50% { transform: translateY(-7px); }
         }
         .animate-float {
             animation: floatSlow 3s ease-in-out infinite;
@@ -116,52 +133,95 @@
 <body class="min-h-screen flex flex-col justify-between items-center text-white p-3 sm:p-5 overflow-x-hidden relative">
 
     <!-- ==================== 1. HOME SCREEN (MAIN MENU) ==================== -->
-    <div id="home-screen" class="fixed inset-0 bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 z-40 flex flex-col justify-between items-center p-6 text-center">
-        <!-- टॉप बार: कॉइन्स और साउंड -->
-        <div class="w-full max-w-lg flex justify-between items-center">
-            <button type="button" onclick="openWalletModal()" class="btn-3d bg-slate-900/90 hover:bg-slate-800 border border-amber-400/50 px-3.5 py-1.5 rounded-2xl flex items-center gap-2 shadow cursor-pointer">
-                <span>🪙</span>
-                <span id="home-coins" class="font-bold text-amber-400 text-sm">100</span>
-                <span class="bg-amber-400/20 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded-md">Wallet</span>
+    <div id="home-screen" class="fixed inset-0 z-40 flex flex-col justify-between items-center p-5 sm:p-6 text-center overflow-y-auto" style="background: var(--bg-gradient);">
+        <!-- टॉप बार: कॉइन्स (+ बटन के साथ) और Settings गियर -->
+        <div class="w-full max-w-md flex justify-between items-center">
+            <button type="button" onclick="openShopModal()" class="bg-[#1b2038] hover:bg-[#232946] border border-white/10 pl-2 pr-1.5 py-1 rounded-full flex items-center gap-2 shadow-lg cursor-pointer transition">
+                <span class="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center text-xs shadow-inner">🪙</span>
+                <span id="home-coins" class="font-bold text-white text-sm px-1">100</span>
+                <span class="w-6 h-6 rounded-full bg-[#58cc02] text-slate-950 font-extrabold text-base flex items-center justify-center leading-none">+</span>
             </button>
-            <button type="button" onclick="toggleSound()" class="home-sound-btn btn-3d bg-indigo-900/80 border border-indigo-500/40 p-2.5 rounded-2xl text-base">
-                🔊
+
+            <button type="button" onclick="openSettingsModal()" aria-label="Settings" class="w-10 h-10 rounded-full bg-[#1b2038] hover:bg-[#252c4a] border border-white/10 flex items-center justify-center text-slate-300 hover:text-white shadow-lg cursor-pointer transition">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
             </button>
         </div>
 
-        <!-- सेंटर लोगो और PLAY बटन -->
-        <div class="flex flex-col items-center my-auto max-w-sm w-full">
-            <div class="animate-float text-6xl sm:text-7xl mb-4 drop-shadow-[0_10px_20px_rgba(251,191,36,0.3)]">
-                🧪✨
+        <!-- सेंटर 3 बोतलें, टाइटल, PLAY बटन और 3 फीचर कार्ड्स -->
+        <div class="flex flex-col items-center my-auto max-w-sm w-full py-4">
+            <!-- 3 रंगीन बोतलों का ग्राफ़िक -->
+            <div class="animate-float flex items-end justify-center gap-3.5 mb-5">
+                <!-- बाईं बोतल -->
+                <div class="w-10 h-24 rounded-b-xl rounded-t-md border-2 border-cyan-300/70 bg-white/5 p-1 flex flex-col justify-end gap-0.5 shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                    <div class="h-1/4 rounded-sm bg-yellow-400"></div>
+                    <div class="h-1/4 rounded-sm bg-orange-400"></div>
+                    <div class="h-1/4 rounded-sm bg-rose-400"></div>
+                    <div class="h-1/4 rounded-b-lg bg-pink-500"></div>
+                </div>
+                <!-- बीच की बड़ी बोतल -->
+                <div class="w-12 h-28 -translate-y-2 rounded-b-2xl rounded-t-md border-2 border-cyan-300/80 bg-white/5 p-1 flex flex-col justify-end gap-0.5 shadow-[0_0_20px_rgba(34,211,238,0.3)]">
+                    <div class="h-1/4 rounded-sm bg-lime-400"></div>
+                    <div class="h-1/4 rounded-sm bg-emerald-400"></div>
+                    <div class="h-1/4 rounded-sm bg-cyan-400"></div>
+                    <div class="h-1/4 rounded-b-xl bg-blue-500"></div>
+                </div>
+                <!-- दाईं बोतल -->
+                <div class="w-10 h-24 rounded-b-xl rounded-t-md border-2 border-cyan-300/70 bg-white/5 p-1 flex flex-col justify-end gap-0.5 shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                    <div class="h-1/4 rounded-sm bg-rose-400"></div>
+                    <div class="h-1/4 rounded-sm bg-pink-400"></div>
+                    <div class="h-1/4 rounded-sm bg-purple-400"></div>
+                    <div class="h-1/4 rounded-b-lg bg-indigo-500"></div>
+                </div>
             </div>
-            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-amber-300 to-rose-400 mb-2">
+
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-wide text-amber-400 drop-shadow-[0_3px_0_rgba(180,83,9,0.8)] mb-1">
                 WATER SORT
             </h1>
-            <p class="text-xs sm:text-sm text-indigo-200/80 mb-8">
-                दिमागी रंग पज़ल • Brain Teaser Puzzle
+            <p class="text-xs sm:text-sm text-slate-300 mb-7">
+                Sort the colors. Clear the levels.
             </p>
 
-            <!-- मुख्य PLAY बटन -->
-            <button type="button" onclick="enterGame()" class="btn-3d w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 text-slate-950 font-extrabold py-4 px-8 rounded-2xl text-lg sm:text-xl shadow-xl flex items-center justify-center gap-3 mb-4 cursor-pointer">
-                <span>▶️</span>
-                <span id="home-play-text">PLAY LEVEL 1</span>
+            <!-- मुख्य हरा PLAY बटन -->
+            <button type="button" onclick="enterGame()" class="w-full bg-[#58cc02] hover:bg-[#61e002] active:translate-y-1 text-white rounded-3xl py-3.5 px-8 shadow-[0_5px_0_#46a302] flex flex-col items-center justify-center mb-4 cursor-pointer transition">
+                <div class="flex items-center gap-2 text-2xl font-extrabold tracking-wide">
+                    <span>▶</span>
+                    <span>PLAY</span>
+                </div>
+                <span id="home-play-level" class="text-xs font-semibold text-white/90 -mt-0.5">Level 1</span>
             </button>
 
-            <!-- नियम / कैसे खेलें बटन -->
-            <button type="button" onclick="toggleModal('how-to-play-modal', true)" class="btn-3d w-full bg-indigo-900/70 hover:bg-indigo-800 border border-indigo-500/30 text-indigo-100 font-semibold py-3 px-6 rounded-2xl text-sm cursor-pointer">
-                📖 कैसे खेलें (How to Play)
-            </button>
+            <!-- 3 बटन: Daily, Styles, Shop -->
+            <div class="grid grid-cols-3 gap-3 w-full">
+                <!-- Daily -->
+                <button type="button" onclick="openDailyModal()" class="relative bg-[#1b2042] hover:bg-[#242b57] border border-indigo-400/20 rounded-2xl py-3.5 px-2 flex flex-col items-center justify-center gap-1.5 shadow-lg cursor-pointer transition active:scale-95">
+                    <span id="daily-badge" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-[10px] font-bold flex items-center justify-center animate-bounce">!</span>
+                    <span class="text-2xl text-cyan-300">🎁</span>
+                    <span class="text-xs font-semibold text-white">Daily</span>
+                </button>
+
+                <!-- Styles -->
+                <button type="button" onclick="openStylesModal()" class="bg-[#1b2042] hover:bg-[#242b57] border border-indigo-400/20 rounded-2xl py-3.5 px-2 flex flex-col items-center justify-center gap-1.5 shadow-lg cursor-pointer transition active:scale-95">
+                    <span class="text-2xl text-teal-300">🎨</span>
+                    <span class="text-xs font-semibold text-white">Styles</span>
+                </button>
+
+                <!-- Shop -->
+                <button type="button" onclick="openShopModal()" class="bg-[#1b2042] hover:bg-[#242b57] border border-indigo-400/20 rounded-2xl py-3.5 px-2 flex flex-col items-center justify-center gap-1.5 shadow-lg cursor-pointer transition active:scale-95">
+                    <span class="text-2xl text-emerald-300">🛍️</span>
+                    <span class="text-xs font-semibold text-white">Shop</span>
+                </button>
+            </div>
         </div>
 
-        <!-- फुटर: Play Store के लिए अनिवार्य Privacy Policy लिंक -->
-        <div class="w-full max-w-lg flex flex-col items-center gap-2 text-xs text-slate-400">
-            <div class="flex gap-4">
-                <button type="button" onclick="toggleModal('privacy-modal', true)" class="underline hover:text-amber-300 transition cursor-pointer">
-                    Privacy Policy
-                </button>
-                <span>•</span>
-                <span>Version 1.0.0</span>
-            </div>
+        <!-- फुटर: How to Play और Privacy Policy -->
+        <div class="w-full max-w-md flex justify-center items-center gap-4 text-xs text-slate-400">
+            <button type="button" onclick="toggleModal('how-to-play-modal', true)" class="hover:text-amber-300 transition cursor-pointer">
+                📖 How to Play
+            </button>
+            <span>•</span>
+            <button type="button" onclick="toggleModal('privacy-modal', true)" class="hover:text-amber-300 transition cursor-pointer">
+                Privacy Policy
+            </button>
         </div>
     </div>
 
@@ -170,7 +230,7 @@
         <div class="flex justify-between items-center bg-slate-900/80 border border-indigo-500/30 px-3 sm:px-4 py-2.5 rounded-2xl shadow-lg">
             <!-- होम बटन और लेवल बैज -->
             <div class="flex items-center gap-2.5">
-                <button type="button" onclick="goHome()" title="Home Menu" class="btn-3d w-10 h-10 rounded-xl bg-indigo-800 hover:bg-indigo-700 border border-indigo-400/30 flex items-center justify-center text-lg shadow">
+                <button type="button" onclick="goHome()" title="Home Menu" class="btn-3d w-10 h-10 rounded-xl bg-indigo-800 hover:bg-indigo-700 border border-indigo-400/30 flex items-center justify-center text-lg shadow cursor-pointer">
                     🏠
                 </button>
                 <div>
@@ -179,33 +239,35 @@
                 </div>
             </div>
 
-            <!-- कॉइन्स और साउंड -->
+            <!-- कॉइन्स और सेटिंग्स -->
             <div class="flex items-center gap-2">
-                <button type="button" onclick="openWalletModal()" class="btn-3d bg-slate-800 hover:bg-slate-700 border border-amber-400/50 px-3 py-1.5 rounded-xl flex items-center gap-1.5 cursor-pointer">
+                <button type="button" onclick="openShopModal()" class="btn-3d bg-slate-800 hover:bg-slate-700 border border-amber-400/50 px-3 py-1.5 rounded-xl flex items-center gap-1.5 cursor-pointer">
                     <span>🪙</span>
                     <span id="coins-display" class="font-bold text-amber-400 text-sm">100</span>
-                    <span class="text-[10px] text-amber-300 font-bold">↗</span>
+                    <span class="text-xs text-emerald-400 font-extrabold">+</span>
                 </button>
-                <button type="button" id="sound-btn" onclick="toggleSound()" class="home-sound-btn btn-3d bg-indigo-900 border border-indigo-500/40 p-2 rounded-xl text-sm">
-                    🔊
+                <button type="button" onclick="openSettingsModal()" class="btn-3d bg-indigo-900 border border-indigo-500/40 p-2 rounded-xl text-sm cursor-pointer">
+                    ⚙️
                 </button>
             </div>
         </div>
 
-        <!-- पावर-अप्स और हेल्प बटन (AdMob Rewarded Ads के साथ) -->
-        <div class="grid grid-cols-3 gap-2">
-            <button type="button" onclick="restartLevel()" class="btn-3d bg-slate-800 hover:bg-slate-700 border border-slate-600 py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1">
+        <!-- पावर-अप्स: Restart, Undo, Hint, +1 बोतल -->
+        <div class="grid grid-cols-4 gap-2">
+            <button type="button" onclick="restartLevel()" class="btn-3d bg-slate-800 hover:bg-slate-700 border border-slate-600 py-2 px-1 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer">
                 <span>🔄</span> रीस्टार्ट
             </button>
 
-            <button type="button" onclick="undoMove()" class="btn-3d bg-indigo-700 hover:bg-indigo-600 py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1">
+            <button type="button" onclick="undoMove()" class="btn-3d bg-indigo-700 hover:bg-indigo-600 py-2 px-1 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer">
                 <span>↩️</span> Undo (<span id="undo-count">2</span>)
             </button>
 
-            <!-- Rewarded Ad से एक्स्ट्रा खाली बोतल जोड़ना -->
-            <button type="button" id="add-bottle-btn" onclick="triggerAd('extra_bottle')" class="btn-3d bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 text-slate-950">
+            <button type="button" onclick="useHint()" class="btn-3d bg-sky-700 hover:bg-sky-600 py-2 px-1 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer">
+                <span>💡</span> Hint (<span id="hint-count">1</span>)
+            </button>
+
+            <button type="button" id="add-bottle-btn" onclick="addExtraBottle()" class="btn-3d bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 py-2 px-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1 text-slate-950 cursor-pointer">
                 <span>🧪 +1 बोतल</span>
-                <span class="bg-black/25 text-white text-[9px] px-1.5 py-0.5 rounded-full">AD</span>
             </button>
         </div>
     </header>
@@ -222,7 +284,9 @@
         </div>
     </main>
 
-    <!-- लेवल पूरा होने का पॉपअप (Level Complete Modal) -->
+    <div class="h-2"></div>
+
+    <!-- ==================== LEVEL COMPLETE MODAL ==================== -->
     <div id="level-complete-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-30 flex items-center justify-center p-4">
         <div class="animate-bounce-in w-full max-w-sm bg-gradient-to-b from-indigo-900 to-slate-900 border-2 border-amber-400/50 rounded-3xl p-6 text-center shadow-2xl">
             <div class="text-6xl mb-2">🎉</div>
@@ -242,49 +306,224 @@
             </div>
 
             <div class="flex flex-col gap-2.5">
-                <!-- सामान्य अगला लेवल (जिसमें Interstitial Ad दिखेगा) -->
-                <button type="button" onclick="proceedToNextLevel(false)" class="btn-3d w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-3.5 px-4 rounded-xl text-sm shadow-lg">
+                <button type="button" onclick="proceedToNextLevel(false)" class="btn-3d w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-3.5 px-4 rounded-xl text-sm shadow-lg cursor-pointer">
                     अगला लेवल खेलें ➡️
                 </button>
-                <!-- डबल इनाम के लिए Rewarded Ad -->
-                <button type="button" onclick="proceedToNextLevel(true)" class="btn-3d w-full bg-amber-500/20 border border-amber-400/50 text-amber-300 font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5">
-                    <span>🎬</span> विज्ञापन देखें और 2X कॉइन्स (+100 🪙) पाएं
+                <button type="button" onclick="proceedToNextLevel(true)" class="btn-3d w-full bg-amber-500/20 border border-amber-400/50 text-amber-300 font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                    <span>🎁</span> बोनस रिवॉर्ड क्लेम करें (+100 🪙)
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- AdMob Full-Screen Interstitial / Rewarded Ad सिमुलेशन -->
-    <div id="ad-modal" class="hidden fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-6 text-center">
-        <div class="w-full max-w-sm bg-slate-900 border border-amber-500/40 rounded-2xl p-6 flex flex-col items-center">
-            <span id="ad-badge" class="bg-amber-400 text-black text-[11px] font-extrabold px-3 py-1 rounded-full mb-4">
-                AdMob Interstitial Ad (फुल-स्क्रीन ऐड)
-            </span>
-            <div class="w-14 h-14 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <h3 id="ad-heading" class="text-lg font-bold text-white mb-2">अगला लेवल लोड हो रहा है...</h3>
-            <p id="ad-desc" class="text-xs text-slate-300 mb-4">
-                हर लेवल पूरा होने के बाद प्ले स्टोर ऐप्स में यहाँ फुल-स्क्रीन विज्ञापन चलता है, जिससे आपकी कमाई होती है।
-            </p>
-            <div id="ad-countdown" class="text-2xl font-extrabold text-amber-400">3</div>
+    <!-- ==================== DAILY REWARD MODAL ==================== -->
+    <div id="daily-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="animate-bounce-in w-full max-w-sm bg-[#1e2347] border border-indigo-400/30 rounded-3xl p-6 text-center shadow-2xl">
+            <h2 class="text-2xl font-extrabold text-white mb-1">Daily reward</h2>
+            <p id="daily-subtitle" class="text-xs text-slate-300 mb-5">Claim your daily coins!</p>
+
+            <!-- Days 1 to 4 -->
+            <div id="daily-grid-top" class="grid grid-cols-4 gap-2 mb-2"></div>
+            <!-- Days 5 to 7 -->
+            <div id="daily-grid-bottom" class="grid grid-cols-3 gap-2 max-w-[78%] mx-auto mb-6"></div>
+
+            <button type="button" id="daily-action-btn" onclick="claimDailyReward()" class="w-full bg-[#58cc02] hover:bg-[#61e002] text-white font-extrabold py-3.5 rounded-2xl text-base shadow-[0_4px_0_#46a302] cursor-pointer transition">
+                Claim Reward
+            </button>
         </div>
     </div>
 
-    <!-- नीचे का AdMob Banner Ad -->
-    <footer class="w-full max-w-lg mt-2">
-        <div class="w-full h-14 bg-slate-900/95 border border-dashed border-indigo-400/40 rounded-xl flex items-center justify-between px-4">
-            <div class="flex items-center gap-2.5">
-                <span class="bg-amber-400 text-slate-950 text-[10px] font-extrabold px-1.5 py-0.5 rounded">Ad</span>
-                <div>
-                    <p class="text-xs font-semibold text-white">Google AdMob Banner (320x50)</p>
-                    <p class="text-[10px] text-slate-400">गेम खेलते समय लगातार चलने वाला बैनर ऐड</p>
+    <!-- ==================== STYLES MODAL (BOTTLES & BACKGROUNDS) ==================== -->
+    <div id="styles-modal" class="hidden fixed inset-0 bg-[#0d1025] z-50 flex flex-col items-center p-4 sm:p-6 overflow-y-auto">
+        <div class="w-full max-w-md flex justify-between items-center mb-5">
+            <button type="button" onclick="toggleModal('styles-modal', false)" class="w-10 h-10 rounded-full bg-[#1e2442] text-white flex items-center justify-center text-lg font-bold cursor-pointer">
+                ←
+            </button>
+            <h2 class="text-2xl font-extrabold text-white">Styles</h2>
+            <div class="bg-[#1b2038] border border-white/10 pl-2 pr-3 py-1 rounded-full flex items-center gap-1.5">
+                <span class="text-sm">🪙</span>
+                <span id="styles-coins" class="font-bold text-white text-sm">100</span>
+            </div>
+        </div>
+
+        <!-- Tabs: Bottles / Backgrounds -->
+        <div class="w-full max-w-md grid grid-cols-2 bg-[#1a1f3d] p-1 rounded-2xl mb-5">
+            <button type="button" id="tab-bottles" onclick="switchStyleTab('bottles')" class="py-2.5 rounded-xl text-sm font-bold bg-[#7c5dfa] text-white transition cursor-pointer">
+                Bottles
+            </button>
+            <button type="button" id="tab-backgrounds" onclick="switchStyleTab('backgrounds')" class="py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:text-white transition cursor-pointer">
+                Backgrounds
+            </button>
+        </div>
+
+        <!-- Cards Grid -->
+        <div id="styles-grid" class="w-full max-w-md grid grid-cols-2 gap-3.5 pb-6">
+            <!-- JS से भरेंगे -->
+        </div>
+    </div>
+
+    <!-- ==================== SHOP MODAL ==================== -->
+    <div id="shop-modal" class="hidden fixed inset-0 bg-[#0d1025] z-50 flex flex-col items-center p-4 sm:p-6 overflow-y-auto">
+        <div class="w-full max-w-md flex justify-between items-center mb-5">
+            <button type="button" onclick="toggleModal('shop-modal', false)" class="w-10 h-10 rounded-full bg-[#1e2442] text-white flex items-center justify-center text-lg font-bold cursor-pointer">
+                ←
+            </button>
+            <h2 class="text-2xl font-extrabold text-white">Shop</h2>
+            <div class="bg-[#1b2038] border border-white/10 pl-2 pr-3 py-1 rounded-full flex items-center gap-1.5">
+                <span class="text-sm">🪙</span>
+                <span id="shop-coins" class="font-bold text-white text-sm">100</span>
+            </div>
+        </div>
+
+        <div class="w-full max-w-md space-y-5 pb-8 text-left">
+            <!-- Free Coins -->
+            <div class="bg-[#1b2042] border border-indigo-400/20 rounded-2xl p-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xl">🎁</div>
+                    <div>
+                        <div class="font-bold text-white text-sm">Free coins</div>
+                        <div class="text-xs text-slate-400">Claim free bonus coins</div>
+                    </div>
+                </div>
+                <button type="button" id="free-coins-btn" onclick="claimShopFreeCoins()" class="bg-[#7c5dfa] hover:bg-[#6a48f5] text-white font-bold px-4 py-2 rounded-full text-xs shadow cursor-pointer">
+                    +200 🪙
+                </button>
+            </div>
+
+            <!-- Power-ups (कॉइन्स से खरीदें) -->
+            <div>
+                <h3 class="text-base font-extrabold text-white mb-2.5">Power-ups</h3>
+                <div class="space-y-2.5">
+                    <div class="bg-[#1b2042] border border-indigo-400/20 rounded-2xl p-3.5 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">💡</span>
+                            <div>
+                                <div class="font-bold text-white text-sm">+2 Hints</div>
+                                <div class="text-[11px] text-slate-400">Shows best next move</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyPowerup('hint', 100)" class="bg-[#58cc02] hover:bg-[#61e002] text-white font-bold px-4 py-2 rounded-full text-xs cursor-pointer">
+                            🪙 100
+                        </button>
+                    </div>
+
+                    <div class="bg-[#1b2042] border border-indigo-400/20 rounded-2xl p-3.5 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">↩️</span>
+                            <div>
+                                <div class="font-bold text-white text-sm">+3 Undos</div>
+                                <div class="text-[11px] text-slate-400">Reverse your last moves</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyPowerup('undo', 40)" class="bg-[#58cc02] hover:bg-[#61e002] text-white font-bold px-4 py-2 rounded-full text-xs cursor-pointer">
+                            🪙 40
+                        </button>
+                    </div>
+
+                    <div class="bg-[#1b2042] border border-indigo-400/20 rounded-2xl p-3.5 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">⏭️</span>
+                            <div>
+                                <div class="font-bold text-white text-sm">Skip Level</div>
+                                <div class="text-[11px] text-slate-400">Jump to next level</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="buyPowerup('skip', 150)" class="bg-[#58cc02] hover:bg-[#61e002] text-white font-bold px-4 py-2 rounded-full text-xs cursor-pointer">
+                            🪙 150
+                        </button>
+                    </div>
                 </div>
             </div>
-            <span class="text-xs bg-emerald-600 px-3 py-1 rounded-lg font-semibold">Open</span>
+
+            <!-- What are coins for? -->
+            <div>
+                <h3 class="text-base font-extrabold text-white mb-2.5">What are coins for?</h3>
+                <div class="bg-[#1b2042] border border-indigo-400/20 rounded-2xl p-4 space-y-2.5 text-xs">
+                    <div class="flex justify-between items-center">
+                        <span class="text-white font-semibold">🟡 Hints</span>
+                        <span class="text-slate-300">100 coins (+2 hints)</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-white font-semibold">🟡 +3 Undos</span>
+                        <span class="text-slate-300">40 coins</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-white font-semibold">🟡 Skip a level</span>
+                        <span class="text-slate-300">150 coins</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-white font-semibold">🟡 Bottles & Backgrounds</span>
+                        <span class="text-slate-300">400 to 1,200 coins in Styles</span>
+                    </div>
+                </div>
+            </div>
         </div>
-    </footer>
+    </div>
+
+    <!-- ==================== SETTINGS MODAL ==================== -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-[#0d1025] z-50 flex flex-col items-center p-4 sm:p-6 overflow-y-auto">
+        <div class="w-full max-w-md flex justify-between items-center mb-6">
+            <button type="button" onclick="toggleModal('settings-modal', false)" class="w-10 h-10 rounded-full bg-[#1e2442] text-white flex items-center justify-center text-lg font-bold cursor-pointer">
+                ←
+            </button>
+            <h2 class="text-2xl font-extrabold text-white">Settings</h2>
+            <div class="w-10"></div>
+        </div>
+
+        <div class="w-full max-w-md space-y-4 text-left">
+            <!-- Sound & Haptics -->
+            <div class="bg-[#1b2042] border border-indigo-400/20 rounded-2xl p-4 space-y-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <span class="text-lg">🔊</span>
+                        <span class="font-semibold text-sm text-white">Sound</span>
+                    </div>
+                    <button type="button" id="toggle-sound-btn" onclick="toggleSound()" class="w-12 h-7 rounded-full bg-teal-300 p-1 transition flex items-center justify-end cursor-pointer">
+                        <span class="w-5 h-5 rounded-full bg-slate-900 shadow"></span>
+                    </button>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <span class="text-lg">📳</span>
+                        <span class="font-semibold text-sm text-white">Haptics</span>
+                    </div>
+                    <button type="button" id="toggle-haptics-btn" onclick="toggleHaptics()" class="w-12 h-7 rounded-full bg-teal-300 p-1 transition flex items-center justify-end cursor-pointer">
+                        <span class="w-5 h-5 rounded-full bg-slate-900 shadow"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- How to Play -->
+            <div class="bg-[#1b2042] border border-indigo-400/20 rounded-2xl p-4 space-y-3.5 text-sm">
+                <button type="button" onclick="toggleModal('how-to-play-modal', true)" class="w-full flex items-center gap-3 text-white font-semibold hover:text-amber-300 cursor-pointer">
+                    <span>📖</span>
+                    <span>How to Play</span>
+                </button>
+            </div>
+
+            <!-- Legal & Support -->
+            <div class="bg-[#1b2042] border border-indigo-400/20 rounded-2xl p-4 space-y-3.5 text-sm">
+                <button type="button" onclick="toggleModal('privacy-modal', true)" class="w-full flex items-center gap-3 text-white font-semibold hover:text-amber-300 cursor-pointer">
+                    <span>📄</span>
+                    <span>Privacy policy</span>
+                </button>
+                <button type="button" onclick="toggleModal('terms-modal', true)" class="w-full flex items-center gap-3 text-white font-semibold hover:text-amber-300 cursor-pointer">
+                    <span>⚖️</span>
+                    <span>Terms of service</span>
+                </button>
+                <button type="button" onclick="showToast('Support: shubhamkumar8413@gmail.com')" class="w-full flex items-center gap-3 text-white font-semibold hover:text-amber-300 cursor-pointer">
+                    <span>✉️</span>
+                    <span>Contact support</span>
+                </button>
+            </div>
+
+            <p class="text-center text-xs text-slate-400 pt-2">Water Sort 1.0.2</p>
+        </div>
+    </div>
 
     <!-- टोस्ट नोटिफिकेशन -->
-    <div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 bg-indigo-600 border border-indigo-400 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xl opacity-0 transition-opacity duration-300 pointer-events-none z-50">
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-indigo-600 border border-indigo-400 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xl opacity-0 transition-opacity duration-300 pointer-events-none z-50 whitespace-nowrap">
         संदेश
     </div>
 
@@ -296,94 +535,43 @@
                 <li>किसी भी बोतल पर टैप करके उसे चुनें, फिर दूसरी बोतल पर टैप करके उसमें रंग डालें।</li>
                 <li>आप केवल <b>एक ही रंग</b> के ऊपर या <b>खाली बोतल</b> में ही पानी डाल सकते हैं।</li>
                 <li>जब सभी बोतलों में एक ही रंग भर जाए, तो आपका लेवल पूरा हो जाएगा!</li>
-                <li>फंसने पर <b>Undo</b> या <b>+1 बोतल</b> का उपयोग करें।</li>
+                <li>फंसने पर <b>Undo</b>, <b>Hint</b> या <b>+1 बोतल</b> का उपयोग करें।</li>
             </ul>
-            <button type="button" onclick="toggleModal('how-to-play-modal', false)" class="btn-3d w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-sm">
+            <button type="button" onclick="toggleModal('how-to-play-modal', false)" class="btn-3d w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-sm cursor-pointer">
                 समझ गया!
             </button>
         </div>
     </div>
 
-    <!-- प्राइवेसी पॉलिसी मोडल (Google Play Store के लिए ज़रूरी) -->
+    <!-- प्राइवेसी पॉलिसी मोडल -->
     <div id="privacy-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-indigo-500/40 rounded-3xl p-6 max-w-sm w-full text-left shadow-2xl">
             <h3 class="text-lg font-extrabold text-emerald-400 mb-2">🔒 Privacy Policy</h3>
             <div class="text-xs text-slate-300 space-y-2 max-h-60 overflow-y-auto pr-1 mb-4">
                 <p>यह गेम केवल मनोरंजन के उद्देश्य से बनाया गया है।</p>
-                <p><b>विज्ञापन (Advertisements):</b> इस ऐप में Google AdMob विज्ञापनों का उपयोग किया जाता है, जो विज्ञापन दिखाने के लिए डिवाइस की सामान्य जानकारी (Advertising ID) का उपयोग कर सकते हैं।</p>
-                <p><b>डेटा स्टोरेज:</b> आपका गेम लेवल और कॉइन्स केवल आपके फ़ोन में ही सुरक्षित रहते हैं। हम आपका कोई भी व्यक्तिगत डेटा अपने सर्वर पर नहीं रखते।</p>
+                <p><b>डेटा स्टोरेज:</b> आपका गेम लेवल, अनलॉक की गई थीम्स और कॉइन्स केवल आपके फ़ोन (Local Storage) में ही सुरक्षित रहते हैं। हम आपका कोई भी व्यक्तिगत डेटा अपने सर्वर पर एकत्र नहीं करते।</p>
             </div>
-            <button type="button" onclick="toggleModal('privacy-modal', false)" class="btn-3d w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm">
+            <button type="button" onclick="toggleModal('privacy-modal', false)" class="btn-3d w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm cursor-pointer">
                 बंद करें (Close)
             </button>
         </div>
     </div>
 
-    <!-- ==================== COIN WALLET & UPI WITHDRAWAL PAGE ==================== -->
-    <div id="wallet-modal" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4 overflow-y-auto">
-        <div class="animate-bounce-in w-full max-w-md bg-gradient-to-b from-slate-900 to-indigo-950 border border-amber-400/40 rounded-3xl p-5 sm:p-6 shadow-2xl my-auto">
-            <!-- हेडर -->
-            <div class="flex justify-between items-center mb-4">
-                <div class="flex items-center gap-2">
-                    <span class="text-2xl">💳</span>
-                    <h3 class="text-xl font-extrabold text-white">Coin Wallet</h3>
-                </div>
-                <button type="button" onclick="toggleModal('wallet-modal', false)" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center font-bold">
-                    ✕
-                </button>
+    <!-- Terms of Service मोडल -->
+    <div id="terms-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-indigo-500/40 rounded-3xl p-6 max-w-sm w-full text-left shadow-2xl">
+            <h3 class="text-lg font-extrabold text-cyan-400 mb-2">⚖️ Terms of Service</h3>
+            <div class="text-xs text-slate-300 space-y-2 max-h-60 overflow-y-auto pr-1 mb-4">
+                <p>Water Sort एक कैज़ुअल पज़ल गेम है। गेम में मिलने वाले सभी कॉइन्स केवल इन-गेम बोतल स्टाइल्स, बैकग्राउंड्स और पावर-अप्स अनलॉक करने के लिए हैं।</p>
             </div>
-
-            <!-- बैलेंस कार्ड -->
-            <div class="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border border-amber-400/40 rounded-2xl p-4 mb-5 text-center">
-                <div class="text-xs text-amber-200/80 uppercase tracking-wider font-semibold mb-1">कुल उपलब्ध कॉइन्स</div>
-                <div class="text-3xl font-extrabold text-amber-400 flex items-center justify-center gap-2">
-                    <span>🪙</span>
-                    <span id="wallet-balance">100</span>
-                </div>
-                <div class="mt-2 inline-block bg-black/40 text-amber-300 text-[11px] font-semibold px-3 py-1 rounded-full">
-                    मिनिमम विड्रॉल: 5,000 कॉइन्स
-                </div>
-            </div>
-
-            <!-- UPI और कॉइन्स फॉर्म -->
-            <div class="space-y-3.5 text-left">
-                <div>
-                    <label class="block text-xs font-semibold text-indigo-200 mb-1">आपकी UPI ID डालें</label>
-                    <input type="text" id="upi-input" placeholder="उदाहरण: name@paytm या 9876543210@ybl" class="w-full bg-slate-950/90 border border-indigo-500/40 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-indigo-200 mb-1">कितने कॉइन्स विड्रॉल करने हैं? (Min: 5,000)</label>
-                    <input type="number" id="withdraw-coins-input" min="5000" step="100" placeholder="5000" class="w-full bg-slate-950/90 border border-indigo-500/40 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
-                </div>
-
-                <button type="button" onclick="submitWithdrawal()" class="btn-3d w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold py-3 rounded-xl text-sm shadow-lg mt-2 cursor-pointer">
-                    Withdraw Request भेजें 🚀
-                </button>
-            </div>
-
-            <!-- पिछली रिक्वेस्ट हिस्ट्री -->
-            <div class="mt-5 pt-4 border-t border-white/10 text-left">
-                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">हाल की विड्रॉल रिक्वेस्ट</h4>
-                <div id="withdrawal-history" class="space-y-2 max-h-28 overflow-y-auto text-xs">
-                    <p class="text-slate-500 text-center py-2">अभी तक कोई विड्रॉल रिक्वेस्ट नहीं है।</p>
-                </div>
-            </div>
+            <button type="button" onclick="toggleModal('terms-modal', false)" class="btn-3d w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 rounded-xl text-sm cursor-pointer">
+                बंद करें (Close)
+            </button>
         </div>
     </div>
 
     <script>
-        // ==================== GOOGLE ADMOB CONFIGURATION ====================
-        // जब आप Android ऐप बनाएंगे, तो यहाँ अपनी असली AdMob IDs डालेंगे:
-        const ADMOB_CONFIG = {
-            TEST_MODE: true,
-            APP_ID: 'ca-app-pub-3940256099942544~3347511713',
-            BANNER_ID: 'ca-app-pub-3940256099942544/6300978111',
-            INTERSTITIAL_ID: 'ca-app-pub-3940256099942544/1033173712',
-            REWARDED_ID: 'ca-app-pub-3940256099942544/5224354917'
-        };
-
-        // आकर्षक रंगों का पैलेट
+        // ==================== DATA & CATALOGS ====================
         const COLORS = {
             red: 'linear-gradient(135deg, #f87171, #dc2626)',
             blue: 'linear-gradient(135deg, #60a5fa, #2563eb)',
@@ -394,20 +582,59 @@
             cyan: 'linear-gradient(135deg, #22d3ee, #0891b2)'
         };
 
-        // गेम स्टेट वेरिएबल्स
+        const BOTTLE_STYLES = [
+            { id: 'classic', name: 'Classic', price: 0, border: 'rgba(125, 211, 252, 0.8)', glow: 'rgba(56, 189, 248, 0.25)', radius: '10px 10px 26px 26px' },
+            { id: 'emerald', name: 'Emerald', price: 400, border: '#34d399', glow: 'rgba(52, 211, 153, 0.35)', radius: '14px 14px 28px 28px' },
+            { id: 'sunset', name: 'Sunset', price: 400, border: '#fbbf24', glow: 'rgba(251, 191, 36, 0.35)', radius: '8px 8px 24px 24px' },
+            { id: 'rose', name: 'Rose', price: 600, border: '#f472b6', glow: 'rgba(244, 114, 182, 0.35)', radius: '16px 16px 28px 28px' },
+            { id: 'neon', name: 'Neon', price: 800, border: '#a78bfa', glow: 'rgba(167, 139, 250, 0.45)', radius: '12px 12px 26px 26px' },
+            { id: 'gold', name: 'Gold', price: 1000, border: '#fde047', glow: 'rgba(253, 224, 71, 0.45)', radius: '18px 18px 28px 28px' }
+        ];
+
+        const BG_STYLES = [
+            { id: 'midnight', name: 'Midnight', price: 0, bg: 'radial-gradient(circle at top, #0f172a, #13162b, #090c18)' },
+            { id: 'ocean', name: 'Ocean', price: 500, bg: 'radial-gradient(circle at top, #0c4a6e, #082f49, #041524)' },
+            { id: 'forest', name: 'Forest', price: 500, bg: 'radial-gradient(circle at top, #14532d, #052e16, #02140a)' },
+            { id: 'dusk', name: 'Dusk', price: 800, bg: 'radial-gradient(circle at top, #581c3c, #3b0d26, #1a0511)' },
+            { id: 'aurora', name: 'Aurora', price: 1000, bg: 'radial-gradient(circle at top, #115e59, #1e1b4b, #090d16)' },
+            { id: 'lava', name: 'Lava', price: 1200, bg: 'radial-gradient(circle at top, #7c2d12, #450a0a, #180404)' }
+        ];
+
+        const DAILY_REWARDS = [50, 75, 100, 150, 200, 300, 500];
+
+        // ==================== GAME STATE ====================
         let currentLevel = parseInt(localStorage.getItem('watersort_level')) || 1;
         let coins = parseInt(localStorage.getItem('watersort_coins')) || 100;
+        let unlockedBottles = JSON.parse(localStorage.getItem('watersort_unlocked_bottles')) || ['classic'];
+        let equippedBottle = localStorage.getItem('watersort_equipped_bottle') || 'classic';
+        let unlockedBgs = JSON.parse(localStorage.getItem('watersort_unlocked_bgs')) || ['midnight'];
+        let equippedBg = localStorage.getItem('watersort_equipped_bg') || 'midnight';
+
+        let dailyStreak = parseInt(localStorage.getItem('watersort_daily_streak')) || 0;
+        let lastDailyDate = localStorage.getItem('watersort_daily_date') || '';
+
+        let soundEnabled = localStorage.getItem('watersort_sound') !== 'false';
+        let hapticsEnabled = localStorage.getItem('watersort_haptics') !== 'false';
+
         let bottles = [];
         let initialBottles = [];
         let history = [];
         let selectedBottleIndex = null;
         let undoRemaining = 2;
+        let hintRemaining = 1;
         let extraBottleAdded = false;
-        let soundEnabled = true;
+        let currentStyleTab = 'bottles';
 
-        // साउंड इफ़ेक्ट्स (Tone.js)
+        // ==================== SOUND & HAPTICS ====================
         let synth = null;
+        function vibratePhone(ms = 20) {
+            if (hapticsEnabled && navigator.vibrate) {
+                try { navigator.vibrate(ms); } catch (e) {}
+            }
+        }
+
         function playTone(type) {
+            vibratePhone(type === 'win' ? 60 : 18);
             if (!soundEnabled) return;
             try {
                 if (!synth && typeof Tone !== 'undefined') {
@@ -422,20 +649,65 @@
             } catch (e) {}
         }
 
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            document.querySelectorAll('.home-sound-btn').forEach(btn => {
-                btn.innerText = soundEnabled ? '🔊' : '🔇';
-            });
-            showToast(soundEnabled ? 'साउंड चालू' : 'साउंड बंद');
+        function updateSettingsTogglesUI() {
+            const sBtn = document.getElementById('toggle-sound-btn');
+            const hBtn = document.getElementById('toggle-haptics-btn');
+            if (sBtn) {
+                sBtn.className = `w-12 h-7 rounded-full p-1 transition flex items-center cursor-pointer ${soundEnabled ? 'bg-teal-300 justify-end' : 'bg-slate-600 justify-start'}`;
+            }
+            if (hBtn) {
+                hBtn.className = `w-12 h-7 rounded-full p-1 transition flex items-center cursor-pointer ${hapticsEnabled ? 'bg-teal-300 justify-end' : 'bg-slate-600 justify-start'}`;
+            }
         }
 
-        // Home Screen और Modals को कंट्रोल करने के फ़ंक्शन
-        function updateHomeScreenUI() {
-            const homeCoins = document.getElementById('home-coins');
-            const homePlayText = document.getElementById('home-play-text');
-            if (homeCoins) homeCoins.innerText = coins;
-            if (homePlayText) homePlayText.innerText = `PLAY LEVEL ${currentLevel}`;
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('watersort_sound', soundEnabled);
+            updateSettingsTogglesUI();
+            showToast(soundEnabled ? '🔊 Sound ON' : '🔇 Sound OFF');
+        }
+
+        function toggleHaptics() {
+            hapticsEnabled = !hapticsEnabled;
+            localStorage.setItem('watersort_haptics', hapticsEnabled);
+            updateSettingsTogglesUI();
+            if (hapticsEnabled) vibratePhone(30);
+            showToast(hapticsEnabled ? '📳 Haptics ON' : '📴 Haptics OFF');
+        }
+
+        // ==================== UI & THEME APPLICATION ====================
+        function applyEquippedStyles() {
+            const bStyle = BOTTLE_STYLES.find(b => b.id === equippedBottle) || BOTTLE_STYLES[0];
+            const bgStyle = BG_STYLES.find(b => b.id === equippedBg) || BG_STYLES[0];
+
+            document.documentElement.style.setProperty('--bottle-border', bStyle.border);
+            document.documentElement.style.setProperty('--bottle-glow', bStyle.glow);
+            document.documentElement.style.setProperty('--bottle-radius', bStyle.radius);
+            document.documentElement.style.setProperty('--bg-gradient', bgStyle.bg);
+        }
+
+        function syncAllCoinsUI() {
+            localStorage.setItem('watersort_coins', coins);
+            ['home-coins', 'coins-display', 'styles-coins', 'shop-coins'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = coins.toLocaleString();
+            });
+            const lvlEl = document.getElementById('home-play-level');
+            if (lvlEl) lvlEl.innerText = `Level ${currentLevel}`;
+        }
+
+        function toggleModal(modalId, show) {
+            const el = document.getElementById(modalId);
+            if (!el) return;
+            if (show) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => toast.classList.add('opacity-0'), 2000);
         }
 
         function enterGame() {
@@ -446,103 +718,264 @@
 
         function goHome() {
             playTone('select');
-            updateHomeScreenUI();
+            syncAllCoinsUI();
             document.getElementById('home-screen').classList.remove('hidden');
         }
 
-        function toggleModal(modalId, show) {
-            const el = document.getElementById(modalId);
-            if (!el) return;
-            if (show) el.classList.remove('hidden');
-            else el.classList.add('hidden');
-        }
-
-        // ==================== WALLET & UPI WITHDRAWAL LOGIC ====================
-        const MIN_WITHDRAW_COINS = 5000;
-        let withdrawalHistory = JSON.parse(localStorage.getItem('watersort_withdrawals')) || [];
-
-        function openWalletModal() {
+        function openSettingsModal() {
             playTone('select');
-            document.getElementById('wallet-balance').innerText = coins.toLocaleString();
-            document.getElementById('withdraw-coins-input').value = coins >= MIN_WITHDRAW_COINS ? coins : 5000;
-            renderWithdrawalHistory();
-            toggleModal('wallet-modal', true);
+            updateSettingsTogglesUI();
+            toggleModal('settings-modal', true);
         }
 
-        function submitWithdrawal() {
-            const upiId = document.getElementById('upi-input').value.trim();
-            const amount = parseInt(document.getElementById('withdraw-coins-input').value, 10);
-
-            if (!upiId || !upiId.includes('@')) {
-                playTone('error');
-                showToast('कृपया सही UPI ID डालें (जैसे: name@upi)');
-                return;
-            }
-
-            if (isNaN(amount) || amount < MIN_WITHDRAW_COINS) {
-                playTone('error');
-                showToast('मिनिमम विड्रॉल 5,000 कॉइन्स है!');
-                return;
-            }
-
-            if (amount > coins) {
-                playTone('error');
-                showToast(`आपके पास पर्याप्त कॉइन्स नहीं हैं! (उपलब्ध: ${coins})`);
-                return;
-            }
-
-            // कॉइन्स काटें और रिक्वेस्ट सेव करें
-            coins -= amount;
-            localStorage.setItem('watersort_coins', coins);
-            document.getElementById('coins-display').innerText = coins;
-            document.getElementById('wallet-balance').innerText = coins.toLocaleString();
-            updateHomeScreenUI();
-
-            const record = {
-                upi: upiId,
-                coins: amount,
-                date: new Date().toLocaleDateString('hi-IN'),
-                status: 'Pending'
-            };
-            withdrawalHistory.unshift(record);
-            localStorage.setItem('watersort_withdrawals', JSON.stringify(withdrawalHistory));
-
-            playTone('win');
-            showToast('✅ विड्रॉल रिक्वेस्ट सफलतापूर्वक सबमिट हो गई!');
-            renderWithdrawalHistory();
+        // ==================== DAILY REWARD LOGIC ====================
+        function getTodayStr() {
+            return new Date().toISOString().split('T')[0];
         }
 
-        function renderWithdrawalHistory() {
-            const listEl = document.getElementById('withdrawal-history');
-            if (!listEl) return;
-            if (withdrawalHistory.length === 0) {
-                listEl.innerHTML = '<p class="text-slate-500 text-center py-2">अभी तक कोई विड्रॉल रिक्वेस्ट नहीं है।</p>';
-                return;
+        function isDailyClaimedToday() {
+            return lastDailyDate === getTodayStr();
+        }
+
+        function updateDailyBadge() {
+            const badge = document.getElementById('daily-badge');
+            if (!badge) return;
+            if (!isDailyClaimedToday()) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+        }
+
+        function openDailyModal() {
+            playTone('select');
+            renderDailyGrid();
+            toggleModal('daily-modal', true);
+        }
+
+        function renderDailyGrid() {
+            const topGrid = document.getElementById('daily-grid-top');
+            const bottomGrid = document.getElementById('daily-grid-bottom');
+            const sub = document.getElementById('daily-subtitle');
+            const btn = document.getElementById('daily-action-btn');
+
+            const claimedToday = isDailyClaimedToday();
+            const currentDayIndex = dailyStreak % 7;
+
+            if (claimedToday) {
+                sub.innerText = 'Already claimed today. Come back tomorrow!';
+                btn.innerText = 'OK';
+            } else {
+                sub.innerText = `Day ${currentDayIndex + 1} reward is ready!`;
+                btn.innerText = `Claim +${DAILY_REWARDS[currentDayIndex]} 🪙`;
             }
-            listEl.innerHTML = withdrawalHistory.map(item => `
-                <div class="bg-black/40 border border-white/10 rounded-xl px-3 py-2 flex justify-between items-center">
-                    <div>
-                        <div class="font-semibold text-white">${item.upi}</div>
-                        <div class="text-[10px] text-slate-400">${item.date} • 🪙 ${item.coins.toLocaleString()}</div>
+
+            const makeCard = (idx) => {
+                const isPast = idx < currentDayIndex;
+                const isTodayActive = idx === currentDayIndex && !claimedToday;
+                return `
+                    <div class="rounded-2xl p-2.5 flex flex-col items-center justify-center border ${isTodayActive ? 'bg-indigo-600/50 border-amber-400 scale-105' : 'bg-[#2a3161] border-white/5'}">
+                        <span class="text-[11px] text-slate-300 mb-1">Day ${idx + 1}</span>
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center mb-1 ${isPast ? 'bg-[#58cc02] text-slate-950 font-extrabold text-sm' : 'bg-gradient-to-br from-yellow-300 to-amber-500 text-xs'}">
+                            ${isPast ? '✓' : '🪙'}
+                        </div>
+                        <span class="text-xs font-extrabold text-white">${DAILY_REWARDS[idx]}</span>
                     </div>
-                    <span class="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        ${item.status}
-                    </span>
-                </div>
-            `).join('');
+                `;
+            };
+
+            topGrid.innerHTML = [0, 1, 2, 3].map(makeCard).join('');
+            bottomGrid.innerHTML = [4, 5, 6].map(makeCard).join('');
         }
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.classList.remove('opacity-0');
-            setTimeout(() => toast.classList.add('opacity-0'), 2000);
+        function claimDailyReward() {
+            if (isDailyClaimedToday()) {
+                toggleModal('daily-modal', false);
+                return;
+            }
+            const reward = DAILY_REWARDS[dailyStreak % 7];
+            coins += reward;
+            dailyStreak += 1;
+            lastDailyDate = getTodayStr();
+
+            localStorage.setItem('watersort_daily_streak', dailyStreak);
+            localStorage.setItem('watersort_daily_date', lastDailyDate);
+
+            syncAllCoinsUI();
+            updateDailyBadge();
+            playTone('win');
+            showToast(`🎉 +${reward} Daily Coins मिले!`);
+            renderDailyGrid();
         }
 
-        // लेवल के हिसाब से पज़ल जनरेट करना (हर लेवल पर कठिनाई बढ़ेगी)
+        // ==================== STYLES (BOTTLES & BACKGROUNDS) ====================
+        function openStylesModal() {
+            playTone('select');
+            syncAllCoinsUI();
+            switchStyleTab(currentStyleTab);
+            toggleModal('styles-modal', true);
+        }
+
+        function switchStyleTab(tab) {
+            currentStyleTab = tab;
+            const bTab = document.getElementById('tab-bottles');
+            const bgTab = document.getElementById('tab-backgrounds');
+
+            if (tab === 'bottles') {
+                bTab.className = 'py-2.5 rounded-xl text-sm font-bold bg-[#7c5dfa] text-white transition cursor-pointer';
+                bgTab.className = 'py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:text-white transition cursor-pointer';
+            } else {
+                bgTab.className = 'py-2.5 rounded-xl text-sm font-bold bg-[#7c5dfa] text-white transition cursor-pointer';
+                bTab.className = 'py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:text-white transition cursor-pointer';
+            }
+            renderStylesGrid();
+        }
+
+        function renderStylesGrid() {
+            const grid = document.getElementById('styles-grid');
+            if (currentStyleTab === 'bottles') {
+                grid.innerHTML = BOTTLE_STYLES.map(item => {
+                    const isUnlocked = unlockedBottles.includes(item.id);
+                    const isEquipped = equippedBottle === item.id;
+                    return `
+                        <div onclick="handleStyleClick('bottle', '${item.id}', ${item.price})" class="bg-[#1b2042] rounded-3xl p-3.5 border-2 ${isEquipped ? 'border-[#58cc02]' : 'border-indigo-400/15'} flex flex-col cursor-pointer transition active:scale-95">
+                            <div class="w-full h-32 bg-[#121630] rounded-2xl flex items-center justify-center mb-3">
+                                <div class="w-9 h-24 p-1 flex flex-col justify-end gap-0.5 bg-white/5" style="border: 2.5px solid ${item.border}; border-radius: ${item.radius}; box-shadow: 0 0 12px ${item.glow};">
+                                    <div class="h-1/4 rounded-sm bg-yellow-400"></div>
+                                    <div class="h-1/4 rounded-sm bg-purple-400"></div>
+                                    <div class="h-1/4 rounded-b-lg bg-rose-400"></div>
+                                </div>
+                            </div>
+                            <div class="font-bold text-white text-sm mb-1">${item.name}</div>
+                            ${isEquipped
+                                ? `<div class="text-xs font-bold text-[#58cc02] flex items-center gap-1"><span>✔</span> Equipped</div>`
+                                : isUnlocked
+                                    ? `<div class="text-xs font-semibold text-cyan-300">Tap to Equip</div>`
+                                    : `<div class="text-xs font-bold text-amber-400 flex items-center gap-1"><span>🪙</span> ${item.price}</div>`
+                            }
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                grid.innerHTML = BG_STYLES.map(item => {
+                    const isUnlocked = unlockedBgs.includes(item.id);
+                    const isEquipped = equippedBg === item.id;
+                    return `
+                        <div onclick="handleStyleClick('bg', '${item.id}', ${item.price})" class="bg-[#1b2042] rounded-3xl p-3.5 border-2 ${isEquipped ? 'border-[#58cc02]' : 'border-indigo-400/15'} flex flex-col cursor-pointer transition active:scale-95">
+                            <div class="w-full h-32 rounded-2xl flex items-center justify-center mb-3" style="background: ${item.bg};">
+                                <div class="w-8 h-20 p-1 flex flex-col justify-end gap-0.5 border-2 border-cyan-300/80 rounded-b-xl rounded-t-md bg-white/5">
+                                    <div class="h-1/4 rounded-sm bg-yellow-400"></div>
+                                    <div class="h-1/4 rounded-sm bg-purple-400"></div>
+                                    <div class="h-1/4 rounded-b-lg bg-rose-400"></div>
+                                </div>
+                            </div>
+                            <div class="font-bold text-white text-sm mb-1">${item.name}</div>
+                            ${isEquipped
+                                ? `<div class="text-xs font-bold text-[#58cc02] flex items-center gap-1"><span>✔</span> Equipped</div>`
+                                : isUnlocked
+                                    ? `<div class="text-xs font-semibold text-cyan-300">Tap to Equip</div>`
+                                    : `<div class="text-xs font-bold text-amber-400 flex items-center gap-1"><span>🪙</span> ${item.price}</div>`
+                            }
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function handleStyleClick(type, id, price) {
+            if (type === 'bottle') {
+                if (unlockedBottles.includes(id)) {
+                    equippedBottle = id;
+                    localStorage.setItem('watersort_equipped_bottle', id);
+                    playTone('select');
+                } else {
+                    if (coins < price) {
+                        playTone('error');
+                        showToast(`इस बोतल के लिए ${price} कॉइन्स चाहिए!`);
+                        return;
+                    }
+                    coins -= price;
+                    unlockedBottles.push(id);
+                    equippedBottle = id;
+                    localStorage.setItem('watersort_unlocked_bottles', JSON.stringify(unlockedBottles));
+                    localStorage.setItem('watersort_equipped_bottle', id);
+                    syncAllCoinsUI();
+                    playTone('win');
+                    showToast('🎉 नई बोतल अनलॉक हो गई!');
+                }
+            } else {
+                if (unlockedBgs.includes(id)) {
+                    equippedBg = id;
+                    localStorage.setItem('watersort_equipped_bg', id);
+                    playTone('select');
+                } else {
+                    if (coins < price) {
+                        playTone('error');
+                        showToast(`इस बैकग्राउंड के लिए ${price} कॉइन्स चाहिए!`);
+                        return;
+                    }
+                    coins -= price;
+                    unlockedBgs.push(id);
+                    equippedBg = id;
+                    localStorage.setItem('watersort_unlocked_bgs', JSON.stringify(unlockedBgs));
+                    localStorage.setItem('watersort_equipped_bg', id);
+                    syncAllCoinsUI();
+                    playTone('win');
+                    showToast('🎉 नया बैकग्राउंड अनलॉक हो गया!');
+                }
+            }
+            applyEquippedStyles();
+            renderBottles();
+            renderStylesGrid();
+        }
+
+        // ==================== SHOP LOGIC ====================
+        function openShopModal() {
+            playTone('select');
+            syncAllCoinsUI();
+            toggleModal('shop-modal', true);
+        }
+
+        function claimShopFreeCoins() {
+            const lastShopFree = localStorage.getItem('watersort_shop_free_date') || '';
+            if (lastShopFree === getTodayStr()) {
+                showToast('आज के फ्री कॉइन्स क्लेम हो चुके हैं—कल फिर आएं!');
+                return;
+            }
+            coins += 200;
+            localStorage.setItem('watersort_shop_free_date', getTodayStr());
+            syncAllCoinsUI();
+            playTone('win');
+            showToast('🎉 +200 Free Coins मिले!');
+        }
+
+        function buyPowerup(type, cost) {
+            if (coins < cost) {
+                playTone('error');
+                showToast(`पर्याप्त कॉइन्स नहीं हैं! (${cost} 🪙 चाहिए)`);
+                return;
+            }
+            coins -= cost;
+            syncAllCoinsUI();
+            playTone('win');
+
+            if (type === 'hint') {
+                hintRemaining += 2;
+                document.getElementById('hint-count').innerText = hintRemaining;
+                showToast('💡 +2 Hints जोड़े गए!');
+            } else if (type === 'undo') {
+                undoRemaining += 3;
+                document.getElementById('undo-count').innerText = undoRemaining;
+                showToast('↩️ +3 Undos जोड़े गए!');
+            } else if (type === 'skip') {
+                toggleModal('shop-modal', false);
+                document.getElementById('home-screen').classList.add('hidden');
+                startLevel(currentLevel + 1);
+                showToast('⏭️ Level Skipped!');
+            }
+        }
+
+        // ==================== CORE PUZZLE LOGIC ====================
         function generateLevelData(level) {
             const colorKeys = Object.keys(COLORS);
-            let numColors = 2; // Level 1 में 2 रंग (आसान शुरुआत)
+            let numColors = 2;
             if (level === 2) numColors = 3;
             else if (level >= 3 && level <= 5) numColors = 4;
             else if (level >= 6 && level <= 9) numColors = 5;
@@ -554,40 +987,38 @@
                 for (let i = 0; i < 4; i++) pool.push(c);
             });
 
-            // पानी के रंगों को आपस में मिलाना (Shuffle)
             for (let i = pool.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [pool[i], pool[j]] = [pool[j], pool[i]];
             }
 
-            // भरी हुई बोतलें बनाना
             let generated = [];
             for (let b = 0; b < numColors; b++) {
                 generated.push(pool.slice(b * 4, (b + 1) * 4));
             }
 
-            // 2 खाली बोतलें जोड़ना ताकि पानी बदला जा सके
             generated.push([]);
             if (numColors >= 3) generated.push([]);
 
             return generated;
         }
 
-        // नया लेवल शुरू करना
         function startLevel(level) {
             currentLevel = level;
             localStorage.setItem('watersort_level', currentLevel);
             document.getElementById('level-display').innerText = `LEVEL ${currentLevel}`;
-            document.getElementById('coins-display').innerText = coins;
-            updateHomeScreenUI();
+            syncAllCoinsUI();
 
             bottles = generateLevelData(level);
             initialBottles = JSON.parse(JSON.stringify(bottles));
             history = [];
             selectedBottleIndex = null;
             undoRemaining = 2;
+            hintRemaining = Math.max(hintRemaining, 1);
             extraBottleAdded = false;
+
             document.getElementById('undo-count').innerText = undoRemaining;
+            document.getElementById('hint-count').innerText = hintRemaining;
             document.getElementById('add-bottle-btn').disabled = false;
             document.getElementById('add-bottle-btn').classList.remove('opacity-50');
             document.getElementById('level-complete-modal').classList.add('hidden');
@@ -595,8 +1026,7 @@
             renderBottles();
         }
 
-        // स्क्रीन पर बोतलें दिखाना
-        function renderBottles() {
+        function renderBottles(hintPair = []) {
             const container = document.getElementById('bottles-container');
             container.innerHTML = '';
 
@@ -604,8 +1034,9 @@
                 const bottleEl = document.createElement('div');
                 const isSelected = selectedBottleIndex === index;
                 const isCompleted = bottleColors.length === 4 && bottleColors.every(c => c === bottleColors[0]);
+                const isHint = hintPair.includes(index);
 
-                bottleEl.className = `bottle ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''}`;
+                bottleEl.className = `bottle ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''} ${isHint ? 'hint-glow' : ''}`;
                 bottleEl.onclick = () => handleBottleClick(index);
 
                 bottleColors.forEach(colorKey => {
@@ -619,7 +1050,6 @@
             });
         }
 
-        // बोतल पर क्लिक करने का लॉजिक
         function handleBottleClick(index) {
             if (selectedBottleIndex === null) {
                 if (bottles[index].length === 0) {
@@ -642,7 +1072,6 @@
             pourWater(selectedBottleIndex, index);
         }
 
-        // एक बोतल से दूसरी बोतल में पानी डालना
         function pourWater(fromIdx, toIdx) {
             const fromBottle = bottles[fromIdx];
             const toBottle = bottles[toIdx];
@@ -681,12 +1110,51 @@
             }
         }
 
-        // चेक करना कि लेवल पूरा हुआ या नहीं
+        function useHint() {
+            if (hintRemaining <= 0) {
+                showToast('Hint खत्म! Shop से +2 Hints लें।');
+                return;
+            }
+            for (let i = 0; i < bottles.length; i++) {
+                if (bottles[i].length === 0) continue;
+                const isDone = bottles[i].length === 4 && bottles[i].every(c => c === bottles[i][0]);
+                if (isDone) continue;
+
+                const topColor = bottles[i][bottles[i].length - 1];
+                for (let j = 0; j < bottles.length; j++) {
+                    if (i === j || bottles[j].length >= 4) continue;
+                    const targetTop = bottles[j].length > 0 ? bottles[j][bottles[j].length - 1] : null;
+                    if (targetTop === topColor || (targetTop === null && !bottles[i].every(c => c === topColor))) {
+                        hintRemaining--;
+                        document.getElementById('hint-count').innerText = hintRemaining;
+                        playTone('select');
+                        renderBottles([i, j]);
+                        showToast('💡 चमकती हुई बोतलों में पानी डालें!');
+                        return;
+                    }
+                }
+            }
+            showToast('कोई सीधी चाल नहीं मिली—+1 बोतल का उपयोग करें!');
+        }
+
+        function addExtraBottle() {
+            if (extraBottleAdded) {
+                showToast('इस लेवल में एक्स्ट्रा बोतल पहले ही जुड़ चुकी है!');
+                return;
+            }
+            bottles.push([]);
+            extraBottleAdded = true;
+            document.getElementById('add-bottle-btn').disabled = true;
+            document.getElementById('add-bottle-btn').classList.add('opacity-50');
+            playTone('pour');
+            renderBottles();
+            showToast('🧪 1 खाली बोतल जोड़ दी गई!');
+        }
+
         function checkLevelWin() {
             const won = bottles.every(b => b.length === 0 || (b.length === 4 && b.every(c => c === b[0])));
             if (won) {
                 playTone('win');
-                // जीतते ही अगला लेवल तुरंत सेव करें ताकि ऐप बंद करने पर भी प्रगति सुरक्षित रहे
                 const unlockedNextLevel = currentLevel + 1;
                 localStorage.setItem('watersort_level', unlockedNextLevel);
                 
@@ -713,7 +1181,7 @@
                 return;
             }
             if (undoRemaining <= 0) {
-                showToast('इस लेवल के Undo खत्म हो गए!');
+                showToast('Undo खत्म! Shop से +3 Undos ले सकते हैं।');
                 return;
             }
             bottles = history.pop();
@@ -724,78 +1192,26 @@
             renderBottles();
         }
 
-        function triggerAd(type) {
-            if (type === 'extra_bottle' && extraBottleAdded) {
-                showToast('इस लेवल में एक्स्ट्रा बोतल पहले ही जुड़ चुकी है!');
-                return;
-            }
-
-            const adModal = document.getElementById('ad-modal');
-            const badge = document.getElementById('ad-badge');
-            const heading = document.getElementById('ad-heading');
-            const countdownEl = document.getElementById('ad-countdown');
-
-            if (type === 'extra_bottle') {
-                badge.innerText = 'AdMob Rewarded Video Ad';
-                heading.innerText = 'विज्ञापन के बाद +1 खाली बोतल मिलेगी...';
-            } else if (type === 'double_coins') {
-                badge.innerText = 'AdMob Rewarded Video Ad';
-                heading.innerText = 'विज्ञापन के बाद 2X कॉइन्स मिलेंगे...';
-            } else {
-                badge.innerText = 'AdMob Interstitial Ad (लेवल के बीच का ऐड)';
-                heading.innerText = 'अगला लेवल लोड हो रहा है...';
-            }
-
-            adModal.classList.remove('hidden');
-            let sec = 3;
-            countdownEl.innerText = sec;
-
-            const timer = setInterval(() => {
-                sec--;
-                if (sec > 0) {
-                    countdownEl.innerText = sec;
-                } else {
-                    clearInterval(timer);
-                    adModal.classList.add('hidden');
-                    onAdFinished(type);
-                }
-            }, 1000);
-        }
-
-        function onAdFinished(type) {
-            if (type === 'extra_bottle') {
-                bottles.push([]);
-                extraBottleAdded = true;
-                document.getElementById('add-bottle-btn').disabled = true;
-                document.getElementById('add-bottle-btn').classList.add('opacity-50');
-                renderBottles();
-                showToast('🧪 1 खाली बोतल जोड़ दी गई!');
-            } else if (type === 'double_coins') {
-                coins += 100;
-                localStorage.setItem('watersort_coins', coins);
-                startLevel(currentLevel + 1);
-                showToast('🎉 +100 बोनस कॉइन्स मिले!');
-            } else if (type === 'next_level') {
-                coins += 50;
-                localStorage.setItem('watersort_coins', coins);
-                startLevel(currentLevel + 1);
-            }
-        }
-
-        function proceedToNextLevel(watchRewarded) {
+        function proceedToNextLevel(bonusCoins) {
             document.getElementById('level-complete-modal').classList.add('hidden');
-            if (watchRewarded) {
-                triggerAd('double_coins');
+            if (bonusCoins) {
+                coins += 100;
+                showToast('🎉 +100 बोनस कॉइन्स मिले!');
             } else {
-                triggerAd('next_level');
+                coins += 50;
             }
+            syncAllCoinsUI();
+            startLevel(currentLevel + 1);
         }
 
-        // विंडो लोड होने पर गेम तैयार करें
+        // विंडो लोड होने पर सब सेट करें
         window.onload = () => {
-            updateHomeScreenUI();
+            applyEquippedStyles();
+            syncAllCoinsUI();
+            updateDailyBadge();
+            updateSettingsTogglesUI();
             startLevel(currentLevel);
         };
     </script>
 </body>
-      </html>
+</html>
